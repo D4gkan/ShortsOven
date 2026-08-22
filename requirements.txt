@@ -1,0 +1,70 @@
+# --- Python version note ---
+# PaddlePaddle (required by paddleocr) currently ships wheels for
+# Python 3.9-3.13 only. If you're on a newer interpreter (e.g. 3.14),
+# create your venv with 3.12 or 3.13 instead:
+#   py -3.12 -m venv venv
+
+# --- Core ---
+numpy>=1.24
+opencv-python>=4.8
+Pillow>=10.0
+tqdm>=4.66
+
+# --- OCR (fully offline once models are downloaded) ---
+# PaddleOCR (PP-OCRv6) is the primary OCR engine: text detection +
+# recognition + line-orientation classification (rotated text support).
+# The CPU wheel is listed below; for GPU inference, install the
+# matching paddlepaddle-gpu wheel for your CUDA version instead (see
+# https://www.paddlepaddle.org.cn/en/install/quick) and set
+# "paddleocr_use_gpu": true in config.json.
+paddlepaddle>=3.0.0
+paddleocr>=3.7.0
+
+# paddleocr pulls in paddlex, which pulls in pandas as a transitive
+# dependency (used only for reading config/label files, not by us
+# directly). Left unpinned, pip resolves the newest pandas, whose
+# compiled _libs/*.pyd extensions are new enough that Windows Smart
+# App Control (and some WDAC/AppLocker policies) will block them from
+# loading with "An Application Control policy has blocked this file" --
+# surfacing as a confusing "PaddleOCR is not installed" error at
+# runtime even though it installed successfully. Pinning to an older,
+# extremely widely-installed pandas release avoids the block.
+pandas==2.2.3
+
+# --- Offline neural TTS (male voice) ---
+# Qwen3-TTS is Alibaba's local, open-weight neural TTS model family
+# (Apache 2.0). We use the 1.7B CustomVoice checkpoint for narration.
+# No cloud calls at runtime once weights are downloaded by setup.bat.
+qwen-tts>=0.1.1
+torch>=2.2
+huggingface_hub>=0.24
+soundfile>=0.12.1
+
+# --- Forced alignment (maps generated narration audio -> OCR lines) ---
+# faster-whisper runs the Whisper model fully offline (weights are
+# downloaded once during setup.bat) and returns word-level timestamps,
+# which we use to align narration audio to each OCR line. This is a
+# REQUIRED step, not optional. It auto-detects and uses the same GPU
+# `torch` sees below if one is available (falls back to CPU otherwise
+# -- no separate install needed either way).
+faster-whisper>=1.0.3
+
+# --- Audio processing ---
+pydub>=0.25.1
+librosa>=0.10.1
+
+# librosa pulls in numba (for JIT-accelerated feature extraction),
+# which pulls in llvmlite. Same Smart App Control issue as pandas
+# above: llvmlite.dll from a fresh/unpinned install gets blocked with
+# "WinError 4551 -- An Application Control policy has blocked this
+# file". These older, widely-installed versions load cleanly and are
+# still compatible with Python 3.9-3.13.
+numba==0.58.1
+llvmlite==0.41.1
+
+# --- Text cleanup (offline spelling correction of OCR mistakes) ---
+symspellpy>=6.7.7
+
+# --- Rendering: ffmpeg-python gives us a thin, fast wrapper around the
+# ffmpeg binary itself, which does the actual heavy-lifting compositing.
+ffmpeg-python>=0.2.0

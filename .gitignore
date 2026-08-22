@@ -1,0 +1,63 @@
+# Python virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Local editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Models
+models/*
+!models/.gitkeep
+!models/piper
+!models/piper/
+!models/qwen_tts
+!models/qwen_tts/
+models/piper/*
+models/qwen_tts/*
+models/qwen_tts_tokenizer/
+
+# Downloaded model caches created outside models/
+.cache/
+torch_cache/
+hf_cache/
+
+# Logs from start.bat's batch runs
+logs/*
+!logs/.gitkeep
+
+# Pipeline runtime artifacts (regenerated on every run -- not source)
+cache/*
+output/*
+!cache/.gitkeep
+!output/.gitkeep
+
+# User-provided media can be large and may have third-party licenses.
+# Keep only folder placeholders in the public repository.
+assets/images/*
+assets/backgrounds/*
+assets/music/*
+!assets/images/.gitkeep
+!assets/backgrounds/.gitkeep
+!assets/music/.gitkeep
+
+# Python bytecode caches
+__pycache__/
+*.pyc
+
+# Temporary and generated media files
+*.tmp
+*.part
+*.bak
+*.mp4
+*.wav
