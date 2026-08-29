@@ -94,14 +94,17 @@ if not exist venv (
     )
 )
 
-call venv\Scripts\activate.bat
+set "VENV_PYTHON=%CD%\venv\Scripts\python.exe"
 
-if errorlevel 1 (
+if not exist "%VENV_PYTHON%" (
     echo.
-    echo [ERROR] Failed to activate virtual environment.
+    echo [ERROR] Virtual environment interpreter was not created.
     pause
     exit /b 1
 )
+
+echo Using virtual environment:
+"%VENV_PYTHON%" --version
 
 echo.
 
@@ -111,7 +114,7 @@ REM ============================================================
 
 echo Upgrading pip...
 
-python -m pip install --upgrade pip
+"%VENV_PYTHON%" -m pip install --upgrade pip
 
 if errorlevel 1 (
     echo.
@@ -128,7 +131,7 @@ REM ============================================================
 
 echo Installing Python requirements (this can take a while)...
 
-python -m pip install -r requirements.txt
+"%VENV_PYTHON%" -m pip install -r requirements.txt
 
 if errorlevel 1 (
     echo.
@@ -136,7 +139,7 @@ if errorlevel 1 (
     echo Retrying without cache...
     echo.
 
-    python -m pip install --no-cache-dir -r requirements.txt
+    "%VENV_PYTHON%" -m pip install --no-cache-dir -r requirements.txt
 )
 
 if errorlevel 1 (
@@ -160,7 +163,7 @@ if errorlevel 1 (
     echo   2. Disabling Smart App Control temporarily
     echo   3. Running:
     echo.
-    echo      python -m pip install -r requirements.txt
+    echo      "%VENV_PYTHON%" -m pip install -r requirements.txt
     echo.
     pause
     exit /b 1
@@ -174,7 +177,7 @@ REM ============================================================
 
 echo Downloading offline OCR / TTS / alignment models...
 
-python scripts\download_models.py
+"%VENV_PYTHON%" scripts\download_models.py
 
 if errorlevel 1 (
     echo.

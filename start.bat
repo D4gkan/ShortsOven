@@ -54,8 +54,16 @@ if not exist venv (
     exit /b 1
 )
 
-call venv\Scripts\activate.bat
+set "VENV_PYTHON=%CD%\venv\Scripts\python.exe"
+if not exist "%VENV_PYTHON%" (
+    echo %C_ERR%  [ERROR]%C_RESET% Virtual environment interpreter not found. Run setup.bat first.
+    echo.
+    pause
+    exit /b 1
+)
+
 echo %C_OK%  [OK]%C_RESET% Virtual environment ready.
+echo   Using: "%VENV_PYTHON%"
 echo.
 
 REM ============================================================
@@ -141,7 +149,7 @@ set "LOGFILE=logs\run_%RANDOM%_!VIDEO_INDEX!.log"
 set "DONEFLAG=%TEMP%\redditgen_done_%RANDOM%_!VIDEO_INDEX!.flag"
 if exist "!DONEFLAG!" del /q "!DONEFLAG!" >nul 2>&1
 
-start "" /b cmd /c "python main.py --image "!CURRENT_IMAGE!" > "!LOGFILE!" 2>&1 & echo %%errorlevel%% > "!DONEFLAG!""
+start "" /b cmd /c ""%VENV_PYTHON%" main.py --image "!CURRENT_IMAGE!" > "!LOGFILE!" 2>&1 & echo %%errorlevel%% > "!DONEFLAG!""
 
 <nul set /p "=     Working"
 :BATCH_WAITLOOP
@@ -253,7 +261,7 @@ REM ============================================================
 REM Same cache-clear mechanism as before -- asks Python for the
 REM resolved cache path so this keeps working even if cache_dir is
 REM ever changed in config.json.
-for /f "usebackq delims=" %%c in (`python -c "from src.config import load_config; c=load_config(); print(c.abspath(c.cache_dir))"`) do set "CACHE_DIR=%%c"
+    for /f "usebackq delims=" %%c in (`"%VENV_PYTHON%" -c "from src.config import load_config; c=load_config(); print(c.abspath(c.cache_dir))"`) do set "CACHE_DIR=%%c"
 if defined CACHE_DIR (
     if exist "!CACHE_DIR!" (
         del /q "!CACHE_DIR!\*" >nul 2>&1

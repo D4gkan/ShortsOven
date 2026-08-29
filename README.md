@@ -9,13 +9,14 @@ OCR, narration, and rendering — runs locally once setup finishes.
 
 ## Quick start (Windows)
 
-1. Install [Python 3.10+](https://www.python.org/downloads/) (check
-   "Add Python to PATH") and [ffmpeg](https://ffmpeg.org/download.html)
+1. Install [Python 3.9 through 3.13](https://www.python.org/downloads/)
+  and [ffmpeg](https://ffmpeg.org/download.html)
    (add its `bin` folder to PATH).
 2. Clone this repository and open its folder.
-3. Double-click **`setup.bat`**. This creates a virtual environment,
-   installs everything in `requirements.txt`, and downloads the
-   offline OCR/TTS/alignment models (only step that needs internet).
+3. Double-click **`setup.bat`**. This creates or reuses a virtual
+  environment, installs everything in `requirements.txt`, and downloads
+  the offline OCR/TTS/alignment models. This is the only step that needs
+  internet access.
 4. Drop files into:
    - `assets/images/` — Reddit screenshot(s), `.png`/`.jpg`
    - `assets/backgrounds/` — background video(s), `.mp4`
@@ -35,13 +36,15 @@ music, stock footage, personal screenshots, or model weights to this repo.
 The application is a local Windows batch workflow rather than a hosted web
 service. After cloning, `setup.bat` downloads the required models into the
 ignored `models/` directory and `start.bat` runs the generator offline.
+Both scripts call `venv\Scripts\python.exe` directly, so they do not depend
+on virtual-environment activation or the system Python selected by PATH.
 
 ## How it works
 
 | Stage | Module | What it does |
 |---|---|---|
 | Asset selection | `src/asset_manager.py` | Randomly picks one image, one background, one music track; loops/trims the background to match narration length |
-| OCR | `src/ocr_engine.py` | EasyOCR detects text **lines** (rows), not sentences, with `x/y/width/height` for each |
+| OCR | `src/ocr_engine.py` | PaddleOCR detects text **lines** (rows), not sentences, with `x/y/width/height` for each |
 | Cleanup | `src/text_cleanup.py` | SymSpell fixes minor OCR typos (`Thls` → `This`) before narration |
 | Narration | `src/tts_engine.py` | Piper TTS (offline, neural, male voice only — never a female/robotic fallback) |
 | Alignment | `src/alignment.py` | Builds the narration from real synthesized audio per line, so each line's exact start/end time is measured, not estimated; optionally refined with `faster-whisper` word timestamps |
@@ -67,6 +70,10 @@ ignored `models/` directory and `start.bat` runs the generator offline.
 order — if the first fails to load, the app automatically tries the
 next, and **never** falls back to a female or robotic voice.
 
+The requirements pin `torch==2.7.1` and `torchaudio==2.7.1` to matching
+releases. This prevents Windows DLL errors caused by incompatible Torch
+package versions during PaddleOCR or Qwen TTS startup.
+
 ## Caching
 
 - OCR results are cached per image (by content hash) in `cache/`, so
@@ -79,8 +86,16 @@ next, and **never** falls back to a female or robotic voice.
 - **"ffmpeg was not found on PATH"** — install ffmpeg and add its
   `bin` folder to your system PATH.
 - **"No offline male Piper voice model could be found"** — re-run
-  `setup.bat` (or `python scripts\download_models.py`) with an active
-  internet connection so the voice models can download.
+  `setup.bat` with an active internet connection so the voice models can
+  download.
+- **"Ignoring invalid distribution ~orch"** — an interrupted Torch install
+  left temporary folders in the virtual environment. Run `setup.bat` again;
+  it repairs the matching Torch and Torchaudio installation.
+- **Torch DLL or `WinError 127` errors** — close running generator windows
+  and run `setup.bat` again so the pinned Torch packages are reinstalled.
+- **The setup log uses Python 3.14** — the scripts should report the venv
+  interpreter and Python 3.11, 3.12, or 3.13. If the venv was copied from
+  another folder, run `setup.bat` again to recreate it in this project.
 - **"OCR found no text"** — use a clearer, higher-resolution
   screenshot.
 - Full stack traces and clear explanations are always printed to the

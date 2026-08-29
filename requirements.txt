@@ -36,7 +36,11 @@ pandas==2.2.3
 # (Apache 2.0). We use the 1.7B CustomVoice checkpoint for narration.
 # No cloud calls at runtime once weights are downloaded by setup.bat.
 qwen-tts>=0.1.1
-torch>=2.2
+# Keep Torch and Torchaudio on the same release. Qwen TTS leaves
+# torchaudio unpinned, and mismatched Windows wheels can fail to import
+# with WinError 127 before either TTS or PaddleOCR starts.
+torch==2.7.1
+torchaudio==2.7.1
 huggingface_hub>=0.24
 soundfile>=0.12.1
 
