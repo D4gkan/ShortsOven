@@ -79,6 +79,214 @@ emoji attached:
 - **Let the reader be the one who "gets it."** If the joke requires the post
   to point at itself, cut it and find a version that doesn't.
 
+## 3A. Visual comedy engineering
+
+When the emotional target is funny / absurd, the IMAGE itself must contribute
+to the joke. Do not treat the artifact as merely evidence for the written
+story. The visual should contain a funny, awkward, oddly specific, or
+unexpected element that makes the viewer laugh even before fully processing
+the text.
+
+Use ONE primary visual-comedy mechanism per generation, chosen naturally:
+
+- **Awkward reality** — the photo captures a completely ordinary situation
+  with one deeply awkward detail visible in the background or foreground.
+- **Visual contradiction** — the image appears to prove the story while also
+  quietly contradicting what a normal person would expect.
+- **Bad timing** — the screenshot/photo appears to capture the exact wrong
+  moment, creating an unintentionally hilarious result.
+- **Overly specific behavior** — a person, animal, object, or account is doing
+  something strangely precise that makes the situation funnier.
+- **Background joke** — the main subject looks normal, but a secondary detail
+  in the background creates a second joke.
+- **Human incompetence** — the artifact shows a believable mistake, failed
+  attempt, misunderstanding, or poorly thought-out decision.
+- **Accidental comedy** — nobody in the artifact appears to realize how funny
+  the situation looks.
+- **Unnecessary commitment** — someone has gone to an absurd amount of effort
+  to solve a very small or mundane problem.
+- **Wrong solution** — the person clearly solved the problem, but in a bizarre
+  way that creates a new problem.
+- **Dead-serious absurdity** — the visual is presented completely normally
+  even though the situation itself is ridiculous.
+- **Tiny detail with huge implications** — one small visible object, word,
+  expression, or environmental detail radically changes how the viewer reads
+  the scene.
+- **Social awkwardness** — the visual captures a believable moment of
+  embarrassment, misunderstanding, confusion, or accidental oversharing.
+
+The visual joke must feel DISCOVERED rather than DESIGNED.
+
+Do not add obvious comedy graphics, reaction stickers, arrows, circles,
+captions, meme text, impact fonts, cartoon effects, exaggerated facial
+expressions, or other artificial indicators telling the viewer where the joke
+is.
+
+The viewer should notice the funny detail naturally.
+
+## 3B. Photographic specificity
+
+When the artifact is a photograph, generate a scene that feels like a real
+person happened to capture an unusually funny moment rather than a staged
+comedy photograph.
+
+Prefer:
+
+- imperfect framing
+- slightly inconvenient camera angles
+- ordinary locations
+- realistic clutter
+- believable lighting
+- natural human expressions
+- people looking away from the camera when appropriate
+- objects positioned imperfectly
+- mundane backgrounds
+- accidental cropping
+- small environmental details
+- believable physical mistakes
+- oddly specific objects
+- realistic animal behavior
+- situations that look accidental rather than posed
+
+Avoid:
+
+- cinematic composition
+- professional photography
+- perfectly centered subjects
+- studio lighting
+- exaggerated reactions
+- obviously AI-generated weirdness
+- impossible physics
+- surreal objects unless the story specifically requires them
+- "random funny stuff" inserted only to make the image humorous
+
+The visual should look like something someone genuinely found, photographed, or
+screenshotted and immediately thought, "what am I looking at?"
+
+## 3C. Visual punchline hierarchy
+
+When creating a funny artifact, prioritize humor in this order:
+
+1. The situation itself
+2. The specific visual detail
+3. The written story
+4. The reaction/comment
+
+The image must not depend entirely on the caption to become funny.
+
+Whenever possible, make the viewer notice the main situation first, then discover
+one additional detail after looking for another second.
+
+The secondary detail should enhance the original joke rather than introduce a
+completely separate story.
+
+## 3D. Realistic imperfection
+
+Funny internet discoveries often feel funny because they are imperfect.
+
+Do not make every element look clean, intentional, or professionally arranged.
+
+For photographs, allow believable imperfections such as:
+
+- slightly crooked framing
+- clutter
+- awkward cropping
+- ordinary household objects
+- strange but plausible positioning
+- mild motion blur when appropriate
+- imperfect exposure
+- an unflattering but natural camera angle
+- people caught mid-action
+- animals behaving unpredictably
+- objects partially obscuring other objects
+
+For screenshots, allow believable imperfections such as:
+
+- awkward wording
+- typos when relevant
+- strange capitalization
+- inconsistent punctuation
+- unnecessarily specific phrasing
+- awkward usernames
+- mildly chaotic conversation flow
+
+Do NOT add imperfections randomly. Every imperfection must feel native to the
+artifact and believable for the platform.
+
+## 3E. The "why did they do that?" test
+
+For comedy-focused generations, try to create one moment where the viewer's
+natural reaction is:
+
+"Why would anyone do that?"
+
+The answer should NOT be immediately explained.
+
+The behavior must remain plausible enough that the viewer can imagine a real
+person actually doing it.
+
+The funniest situations are often not impossible. They are ordinary human
+decisions taken one step further than common sense would recommend.
+
+## 3F. Animal comedy
+
+When animals appear, do not make them behave like cartoon characters.
+
+Use realistic animal behavior combined with human interpretation.
+
+Examples of useful mechanisms:
+
+- an animal appearing to deliberately ignore an obvious situation
+- an animal occupying an extremely inconvenient location
+- an animal accidentally causing a mundane problem
+- an animal appearing completely comfortable while humans are confused
+- an animal interacting with an oddly specific household object
+- an animal caught at an unfortunate but believable moment
+
+The animal itself should not need to have an exaggerated facial expression.
+
+The humor should come from the situation.
+
+## 3G. No forced visual jokes
+
+Never add a funny object, person, facial expression, background event, sign,
+or visual detail unless it has a direct relationship to the story.
+
+Do not create a "busy funny background."
+
+Do not put multiple jokes into one image.
+
+Do not make every person react dramatically.
+
+Do not make every animal look mischievous.
+
+Do not add easter eggs merely because they are funny.
+
+ONE strong visual joke is better than five unrelated jokes.
+
+## 3H. Internet-discovery authenticity
+
+The artifact should feel like it existed BEFORE the story was written.
+
+It should look as though someone encountered it naturally and decided to share
+it.
+
+For photographs, prefer the visual language of:
+
+- casual phone photos
+- security-camera captures when relevant
+- screenshots of someone's original post
+- ordinary social-media uploads
+- accidental photos
+- blurry-but-readable snapshots
+- mundane documentation of something unexpectedly strange
+
+For text artifacts, preserve the feeling of an actual person writing quickly
+rather than a professional comedy writer constructing a joke.
+
+The artifact must never look like a purpose-built advertisement, comedy graphic,
+or polished content-production asset.
+
 ## 4. Specificity rule (content-blind)
 
 Whatever fact, quote, name, or number gets invented — for any emotional
@@ -116,16 +324,17 @@ another).
 - **Artifact relevance rule:** the image or screenshot inside the story must be
   directly relevant to the story's actual subject, event, object, location, or
   reveal. It must not be a random generic stock image, unrelated photo, or
-  decorative visual that could belong to any story. The picture should look
-  like a real, story-specific artifact that a person would genuinely have
-  captured and shared.
-- **No famous meme imagery:** do not use recognizable meme templates, famous
-  meme frames, viral meme stills, or iconic internet meme screenshots as the
-  core visual evidence. The artifact must be original, obscure, and specific
-  to the story, not a famous internet meme.
-- **Reaction** — optional. Include only when a second voice adds a genuinely
-  new angle (widens the implication, undercuts it, or notices something about
-  the reaction itself) rather than restating the opening line.
+  decorative visual that could belong to any story.
+
+  For comedy-focused generations, the artifact should ideally contain a
+  visually observable reason the story is funny. The viewer should be able to
+  discover at least one specific visual detail that reinforces, complicates,
+  or unexpectedly reframes the written story.
+
+  The visual joke must arise naturally from the documented situation. Never
+  manufacture comedy by adding unrelated funny objects, meme imagery,
+  exaggerated reactions, stickers, arrows, circles, captions, or other
+  editorial comedy devices.
 
 Use the minimal structure the mechanism needs — some posts are just an
 escalating thread with no separate artifact or reaction at all.
@@ -210,6 +419,20 @@ could pick up as noise.
 - Is the final output locked to a strict 3:4 portrait ratio?
 - Are all profile pictures realistic, platform-appropriate, and non-generic?
 - Is the main artifact original and not a famous meme or recognizable meme frame?
+- If the target is funny/absurd, does the IMAGE itself contain a genuine
+  visual-comedy mechanism rather than merely illustrating the text?
+- Is there exactly one primary visual joke?
+- Does the visual joke arise naturally from the specific situation?
+- Would the artifact still be interesting or amusing if the caption were
+  temporarily hidden?
+- Is the funniest detail discoverable rather than explicitly pointed out?
+- Does the image feel accidentally captured rather than professionally staged?
+- Are imperfections believable and native to the artifact?
+- Is there any unrelated "funny background" detail that should be removed?
+- Are facial expressions and animal behavior realistic rather than cartoonish?
+- Does the image create a natural "why did they do that?" reaction?
+- Does the artifact look like something that genuinely existed before someone
+  decided to share it?
 
 Invent the emotional target, mechanism, subject, artifact, accounts, and any
 reaction text fresh each time this framework is run.
