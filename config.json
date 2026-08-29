@@ -5,7 +5,7 @@
   "narration_volume": 1.0,
   "music_fade_in_sec": 1.5,
   "music_fade_out_sec": 2.0,
-  "voice_speed": 1.18,
+  "voice_speed": 1.05,
   "voice": "male",
   "ocr_lang": "en",
   "paddleocr_use_gpu": false,
