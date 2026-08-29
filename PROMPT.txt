@@ -1,0 +1,215 @@
+# "Found This On The Internet" Post — Idea-Engineering Framework
+
+This is a reusable engine, not a template with content in it. Every run
+invents its own fact, artifact, accounts, and comment from scratch. Nothing
+below should be copied into an output — it's the machine that builds it.
+
+## 1. Pick the emotional target first
+
+Before anything else, pick the ONE feeling this post should leave someone
+with. This choice drives every downstream decision — mechanism, voice,
+artifact, pacing. Rotate across these; don't default to the same one every
+time, or the output starts feeling like a template instead of a real find:
+
+- **Funny / absurd** — the reader laughs or sends it to someone immediately.
+- **Petty outrage / relatable exasperation** — "this is so real it's annoying."
+- **Uncanny / unsettling** — something quietly wrong that lingers.
+- **Jaw-dropping disbelief** — "there's no way this is real."
+- **Wholesome subversion** — braces for something bad, gets something sweet
+  (or the reverse — braces for wholesome, gets a dark turn).
+
+A post that's merely "mildly interesting" won't move. Pick a target strong
+enough that someone would tag a friend or reply within three seconds of
+reading it.
+
+The story itself should be weird, funny, shocking, chaotic, lively, and
+exciting. Boring, flat, or slowly-building stories are not allowed. The core
+story should feel like a real person is urgently telling the most unbelievable
+thing they saw, heard, or found online, with a strong sense of momentum and
+surprise.
+
+Favor stories that feel genuinely alarming, uncanny, darkly funny, or deeply
+strange. The best versions hit with a sharp mix of disbelief, dread, and
+comic timing. The story should not be safe or polite; it should feel like the
+kind of thing that makes someone stop scrolling and immediately send it to a
+friend.
+
+Allowed tone includes dry, suggestive, teasing innuendo and playful sexual
+humor when it is indirect, not explicit, and not graphic. Keep it implied,
+clever, and wink-and-nudge rather than explicit or pornographic.
+
+## 2. The underlying mechanism
+
+Every version of this format runs on an asymmetry, stated plainly, then
+reframed. Pick ONE, chosen to serve the emotional target from step 1:
+
+- **Magnitude mismatch** — a small input maps to a wildly disproportionate
+  output, or something that sounds huge turns out nearly invisible.
+- **Escalation** — a sequence that starts ordinary and, step by step, tips
+  into absurd. The reveal is the trajectory, not one fact.
+- **Claim vs. artifact** — an unbelievable statement, followed by something
+  that looks like proof.
+- **Deadpan reframe** — something that reads as neutral until a second party
+  points out its funny or uncomfortable implication.
+- **Mundane container, extraordinary content** — boring packaging undersells
+  something huge inside it.
+
+## 3. Comedy craft (apply whenever the target is funny/absurd/outrage)
+
+Humor has its own mechanics, separate from surprise. When comedy is the
+target, follow these or the "joke" will just read as a fact with a laugh
+emoji attached:
+
+- **Never explain the joke.** The reaction/comment should never state what's
+  funny about the setup — it should just add a new, deadpan detail that makes
+  the reader do the connecting themselves. Explaining kills it every time.
+- **Specificity is the punchline.** An oddly precise, slightly unnecessary
+  detail is inherently funnier than a vague one. When inventing content,
+  always reach for the more specific, weirder-but-plausible version of any
+  number, name, or noun.
+- **Understatement beats escalation in the punchline.** The setup can
+  escalate; the reaction/final line almost never should — a flat, dry final
+  beat lands harder than an exclamation point.
+- **Dark humor is allowed when it fits the story.** A comment can land with a
+  dry, darkly funny undercut, a sense of dread, or a bitter little twist as
+  long as it still feels human and not mean-spirited or forced.
+- **Incongruity, not absurdity for its own sake.** The funniest pairing is
+  two believable things that shouldn't belong in the same sentence, not one
+  outlandish invented thing.
+- **Let the reader be the one who "gets it."** If the joke requires the post
+  to point at itself, cut it and find a version that doesn't.
+
+## 4. Specificity rule (content-blind)
+
+Whatever fact, quote, name, or number gets invented — for any emotional
+target, not just comedy — it must be concrete and exact, never vague or
+round. This applies to every layer: opening claim, artifact contents, and
+reaction. Invent the specifics fresh each run, calibrated to the mechanism
+chosen in step 2.
+
+## 5. Artifact selection logic
+
+Ask: what would a real person actually have screenshotted to share this?
+Let the answer fall out of the emotional target and mechanism, not a fixed
+list:
+
+- something visually verifiable → a photo or video frame
+- something said or typed → a chat thread, comment section, or post
+- something looked up or answered → a search/AI-assistant screenshot
+- something involving two states or two subjects → a side-by-side or
+  before/after pairing
+- something that got buried → an unremarkable-looking post/account that
+  undersells its own contents
+
+Only one artifact type should dominate. Stack two only if the mechanism
+genuinely needs it (e.g. a claim on one platform verified by evidence on
+another).
+
+## 6. Structural layers (use only what the story needs)
+
+- **Opening line** — states the setup in specific terms. Precision creates
+  the reaction on its own — it doesn't need to withhold information. Register
+  ranges from clean/factual to casually typed depending on platform.
+- **Artifact** — the evidence, styled with real UI conventions of its actual
+  platform. In-artifact text is fine when the artifact type is inherently
+  textual.
+- **Artifact relevance rule:** the image or screenshot inside the story must be
+  directly relevant to the story's actual subject, event, object, location, or
+  reveal. It must not be a random generic stock image, unrelated photo, or
+  decorative visual that could belong to any story. The picture should look
+  like a real, story-specific artifact that a person would genuinely have
+  captured and shared.
+- **No famous meme imagery:** do not use recognizable meme templates, famous
+  meme frames, viral meme stills, or iconic internet meme screenshots as the
+  core visual evidence. The artifact must be original, obscure, and specific
+  to the story, not a famous internet meme.
+- **Reaction** — optional. Include only when a second voice adds a genuinely
+  new angle (widens the implication, undercuts it, or notices something about
+  the reaction itself) rather than restating the opening line.
+
+Use the minimal structure the mechanism needs — some posts are just an
+escalating thread with no separate artifact or reaction at all.
+
+## 7. Addictiveness / shareability engineering
+
+- **Give it a send-to-a-friend hook.** Somewhere in the post — usually the
+  reaction line — there should be a moment specific enough that a reader
+  pictures exactly who they'd send it to, without the post saying "tag
+  someone" outright.
+- **Reward a second look.** Where possible, plant one small detail that only
+  lands on a reread (a word choice, a number, a name) rather than putting
+  every payoff in the first pass.
+- **One clean emotional hit, not several diluted ones.** Resist stacking
+  multiple jokes or twists — a single sharp hit outperforms a cluttered one.
+- **Vary the shape across generations.** Alternate emotional targets,
+  mechanisms, and artifact types run over run so the body of output doesn't
+  converge on one recognizable formula.
+
+## 8. Realism discipline
+
+- Every piece of visible text must be complete and specific — never a
+  placeholder.
+- No design polish: plain white or true dark-mode background, no gradients,
+  no stock-photo lighting, no ad-like composition. It should look scrolled
+  past and screenshotted, not designed.
+- Output must be strictly 3:4 aspect ratio. No landscape, square, or unusual
+  framing.
+- Every profile picture must be realistic, platform-appropriate, and specific to
+  that platform's social context. For example: casual personal portrait for a
+  personal account, clean brand-style avatar for a business account, or a
+  niche-interest profile image if the platform implies that. The avatar should
+  look like a real person or real account, not a cartoon, abstract icon, or
+  generic AI face.
+
+## 9. Hard pipeline constraints (non-negotiable, every generation)
+
+These exist because the output feeds an automated OCR + TTS pipeline, so the
+frame must contain only the story and the comments — nothing else the OCR
+could pick up as noise.
+
+- **Every username and every display name must contain at least one digit or
+  an underscore (`_`).** No exceptions, no clean plain-text names.
+- **Display names:** if there is a display name, it must contain digits only,
+  with no underscore. Example: `moss9`, `jarvis4`, `glow7` is valid. A display
+  name with an underscore is not allowed.
+- **Usernames:** usernames may include `@` only if they also contain a digit or
+  underscore in the name. Example: `@moss9`, `@tide_4`, `@palm7` are valid.
+  Plain names without numbers or underscores are not allowed, and `@name`
+  without a digit or underscore is not allowed.
+- **No engagement counts anywhere** — no likes, shares, saves, views, reposts,
+  replies, follower counts, or any other number that isn't part of the story
+  itself.
+- **No dates or timestamps anywhere** — no post time, no "time ago" labels,
+  no date stamps. The frame should contain only the caption/story text and
+  the comment(s), nothing else.
+- **Strict output ratio: 3:4.** The final render must be portrait and must not
+  drift from the 3:4 aspect ratio.
+- **All profile pictures must be realistic and platform-appropriate.** They must
+  match the social context and feel like real account avatars, not generic AI
+  portraits, memes, or abstract icons.
+- **No famous meme imagery** may be used as the central artifact or visual
+  evidence.
+
+## 10. Before finalizing, check
+
+- Did I pick a single emotional target and let it drive every choice?
+- Is the story weird, funny, shocking, exciting, and energetic enough to match
+  a lively spoken TTS delivery?
+- Does the story have a sharp, darkly funny, unsettling, or shocking edge?
+- Is the reaction line free of any explanation of its own joke?
+- Is every fact/number/name specific rather than generic?
+- Does the artifact match what a real person would actually screenshot?
+- Is the picture inside the story directly relevant to the specific event,
+  object, or scene being described?
+- Is there a moment someone would send to a specific friend?
+- Does this differ in shape/emotion from the last few generations?
+- Does every username/display name have a digit or underscore?
+- If a display name exists, does it use digits only and no underscore?
+- If a username contains @, does it still contain a digit or underscore?
+- Is the frame completely free of counts, dates, and timestamps?
+- Is the final output locked to a strict 3:4 portrait ratio?
+- Are all profile pictures realistic, platform-appropriate, and non-generic?
+- Is the main artifact original and not a famous meme or recognizable meme frame?
+
+Invent the emotional target, mechanism, subject, artifact, accounts, and any
+reaction text fresh each time this framework is run.
