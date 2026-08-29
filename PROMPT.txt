@@ -402,15 +402,18 @@ These exist because the output feeds an automated OCR + TTS pipeline, so the
 frame must contain only the story and the comments — nothing else the OCR
 could pick up as noise.
 
-- **Every username and every display name must contain at least one digit or
-  an underscore (`_`).** No exceptions, no clean plain-text names.
-- **Display names:** if there is a display name, it must contain digits only,
-  with no underscore. Example: `moss9`, `jarvis4`, `glow7` is valid. A display
-  name with an underscore is not allowed.
-- **Usernames:** usernames may include `@` only if they also contain a digit or
-  underscore in the name. Example: `@moss9`, `@tide_4`, `@palm7` are valid.
-  Plain names without numbers or underscores are not allowed, and `@name`
-  without a digit or underscore is not allowed.
+- **Every username and every display name must contain at least one letter and
+  at least one digit or an underscore (`_`).** No exceptions, no numeric-only,
+  underscore-only, or clean plain-text names.
+- **Display names:** if there is a display name, it must include at least one
+  letter and at least one digit, with no underscore. Example: `moss9`,
+  `jarvis4`, `glow7` are valid. A display name with only digits or with an
+  underscore is not allowed.
+- **Usernames:** usernames may include `@` only if they also contain at least
+  one letter and at least one digit or underscore in the name. Example:
+  `@moss9`, `@tide_4`, `@palm7` are valid. Plain names without letters or
+  without digits/underscores are not allowed, and `@1234` or `@name` are not
+  allowed.
 - **No engagement counts anywhere** — no likes, shares, saves, views, reposts,
   replies, follower counts, or any other number that isn't part of the story
   itself.
@@ -444,9 +447,9 @@ could pick up as noise.
   space or dead margins?
 - Is there a moment someone would send to a specific friend?
 - Does this differ in shape/emotion from the last few generations?
-- Does every username/display name have a digit or underscore?
-- If a display name exists, does it use digits only and no underscore?
-- If a username contains @, does it still contain a digit or underscore?
+- Does every username/display name include at least one letter and a digit or underscore?
+- If a display name exists, does it include a letter + digit and no underscore?
+- If a username contains @, does it still include a letter and a digit or underscore?
 - Is the frame completely free of counts, dates, and timestamps?
 - Is the final output locked to a strict 3:4 portrait ratio?
 - Are all profile pictures realistic, platform-appropriate, and non-generic?
