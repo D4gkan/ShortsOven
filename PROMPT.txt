@@ -73,6 +73,11 @@ emoji attached:
 - **Dark humor is allowed when it fits the story.** A comment can land with a
   dry, darkly funny undercut, a sense of dread, or a bitter little twist as
   long as it still feels human and not mean-spirited or forced.
+- **Comments should carry a dark, sarcastic edge.** Reactions and replies
+  should often feel dry, cutting, or wry — a little cynical, quietly mean,
+  or underhandedly funny rather than warm or wholesome. The humor can be
+  sarcastic, deadpan, or bleakly amused, but it must still read like a real
+  person online rather than a polished punchline.
 - **Incongruity, not absurdity for its own sake.** The funniest pairing is
   two believable things that shouldn't belong in the same sentence, not one
   outlandish invented thing.
@@ -130,6 +135,13 @@ When the artifact is a photograph, generate a scene that feels like a real
 person happened to capture an unusually funny moment rather than a staged
 comedy photograph.
 
+For photo-based artifacts, the frame should be tightly composed and visually
+packed with relevant content. Fill the image area with the subject, objects,
+and environment; do not leave large empty areas, blank walls, or floating
+negative space unless the story specifically requires it. The subject should
+feel close to the edges of the frame, with the composition feeling discovered
+rather than posed.
+
 Prefer:
 
 - imperfect framing
@@ -147,6 +159,7 @@ Prefer:
 - oddly specific objects
 - realistic animal behavior
 - situations that look accidental rather than posed
+- tight, full-frame compositions that use the entire image area
 
 Avoid:
 
@@ -159,9 +172,15 @@ Avoid:
 - impossible physics
 - surreal objects unless the story specifically requires them
 - "random funny stuff" inserted only to make the image humorous
+- large empty backgrounds, dead space, or wide negative margins
+- any readable text on the photo itself, including signs, labels, stickers,
+  product packaging text, phone screens, menus, clothing text, or visible
+  writing in the environment
 
 The visual should look like something someone genuinely found, photographed, or
-screenshotted and immediately thought, "what am I looking at?"
+screenshotted and immediately thought, "what am I looking at?" The photo
+inside the story must be visually clean and text-free; if a readable word or
+label appears, it breaks the illusion and must be removed.
 
 ## 3C. Visual punchline hierarchy
 
@@ -280,9 +299,16 @@ For photographs, prefer the visual language of:
 - accidental photos
 - blurry-but-readable snapshots
 - mundane documentation of something unexpectedly strange
+- closely cropped, full-frame discoveries with no wasted space
 
 For text artifacts, preserve the feeling of an actual person writing quickly
 rather than a professional comedy writer constructing a joke.
+
+For photo-based artifacts, the image must be free of all readable text. No
+text on signs, labels, screens, packaging, shirts, posters, notes, or any
+other object. If the story requires an in-scene artifact, it should be a clean
+image with no written language anywhere within the frame. Keep the composition
+tight and occupied so the photo feels intentional without being staged.
 
 The artifact must never look like a purpose-built advertisement, comedy graphic,
 or polished content-production asset.
@@ -406,10 +432,16 @@ could pick up as noise.
   a lively spoken TTS delivery?
 - Does the story have a sharp, darkly funny, unsettling, or shocking edge?
 - Is the reaction line free of any explanation of its own joke?
+- Do the comments carry a dark, sarcastic, dry, or wry tone rather than
+  bland or upbeat reactions?
 - Is every fact/number/name specific rather than generic?
 - Does the artifact match what a real person would actually screenshot?
 - Is the picture inside the story directly relevant to the specific event,
   object, or scene being described?
+- Is the photo completely free of readable text, labels, signs, stickers,
+  writing, or screen text?
+- Is the composition tight and filled with subject matter, with no large empty
+  space or dead margins?
 - Is there a moment someone would send to a specific friend?
 - Does this differ in shape/emotion from the last few generations?
 - Does every username/display name have a digit or underscore?
