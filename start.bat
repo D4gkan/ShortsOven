@@ -1,21 +1,9 @@
 @echo off
 setlocal EnableDelayedExpansion
 cd /d "%~dp0"
+chcp 65001 >nul
 
-REM ============================================================
-REM Guarantee the window stays open no matter what happens below
-REM (crash, unexpected exit, etc.), not just when we reach the
-REM final `pause`. On first run (no marker arg) we relaunch this
-REM same script inside a `cmd /k` shell -- /k keeps the console
-REM alive after the batch finishes or dies, unlike /c. The marker
-REM arg stops this from relaunching itself forever.
-REM ============================================================
-if /I not "%~1"=="__running__" (
-    cmd /k "%~f0" __running__
-    exit /b
-)
-
-title AI Reddit Story Video Generator
+title SHORTS OVEN
 
 REM ============================================================
 REM ANSI color setup. Native in cmd.exe on Windows 10 1607+;
@@ -38,7 +26,7 @@ set "LINE==============================================================="
 
 cls
 echo %C_TITLE%%LINE%%C_RESET%
-echo %C_TITLE%%C_BOLD%              AI REDDIT STORY VIDEO GENERATOR%C_RESET%
+echo %C_TITLE%%C_BOLD%                       SHORTS OVEN%C_RESET%
 echo %C_TITLE%%LINE%%C_RESET%
 echo.
 
@@ -73,12 +61,13 @@ REM every main.py invocation in the batch loop below inherits it --
 REM tts_engine.py already reads this env var itself, so nothing
 REM else needs to pass the voice choice around explicitly.
 REM ============================================================
+:VOICE_SELECTION
 echo %C_STEP%[2/3] Choose a narration voice (used for the entire batch)%C_RESET%
 echo   %C_DIM%[M]%C_RESET% Male
 echo   %C_DIM%[F]%C_RESET% Female
 echo.
+set "VOICE_CHOICE="
 choice /c MF /n /m "  Enter your choice (M/F): "
-
 if errorlevel 2 (
     set "VOICE_GENDER=female"
     set "VOICE_LABEL=Female"
@@ -147,16 +136,27 @@ echo %C_STEP%  -- Image !VIDEO_INDEX!: !CURRENT_IMAGE!%C_RESET%
 
 set "LOGFILE=logs\run_%RANDOM%_!VIDEO_INDEX!.log"
 set "DONEFLAG=%TEMP%\redditgen_done_%RANDOM%_!VIDEO_INDEX!.flag"
+set "PIDFILE=%TEMP%\redditgen_pid_%RANDOM%_!VIDEO_INDEX!.txt"
+set "ERRORLOG=%TEMP%\redditgen_error_%RANDOM%_!VIDEO_INDEX!.log"
+set "ELAPSEDFILE=%TEMP%\redditgen_elapsed_%RANDOM%_!VIDEO_INDEX!.txt"
 if exist "!DONEFLAG!" del /q "!DONEFLAG!" >nul 2>&1
+if exist "!PIDFILE!" del /q "!PIDFILE!" >nul 2>&1
+if exist "!ERRORLOG!" del /q "!ERRORLOG!" >nul 2>&1
+if exist "!ELAPSEDFILE!" del /q "!ELAPSEDFILE!" >nul 2>&1
 
-start "" /b cmd /c ""%VENV_PYTHON%" main.py --image "!CURRENT_IMAGE!" > "!LOGFILE!" 2>&1 & echo %%errorlevel%% > "!DONEFLAG!""
+start "" /b powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$p = Start-Process -FilePath '%VENV_PYTHON%' -ArgumentList @('main.py','--image','!CURRENT_IMAGE!') -WindowStyle Hidden -RedirectStandardOutput '%LOGFILE%' -RedirectStandardError '%ERRORLOG%' -PassThru; Set-Content -LiteralPath '%PIDFILE%' -Value $p.Id -Encoding ascii; $p.WaitForExit(); if (Test-Path -LiteralPath '%ERRORLOG%') { Get-Content -LiteralPath '%ERRORLOG%' | Add-Content -LiteralPath '%LOGFILE%' }; Set-Content -LiteralPath '%DONEFLAG%' -Value $p.ExitCode -Encoding ascii"
 
-<nul set /p "=     Working"
+set /a ELAPSED=0
+set "PROCESS_ID="
 :BATCH_WAITLOOP
-if not exist "!DONEFLAG!" (
-    <nul set /p "=."
-    timeout /t 1 /nobreak >nul
-    goto BATCH_WAITLOOP
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\batch_status.ps1" -PidFile "!PIDFILE!" -DoneFlag "!DONEFLAG!" -ElapsedFile "!ELAPSEDFILE!" 2>nul
+if errorlevel 1 (
+    echo %C_WARN%Work interrupted%C_RESET%
+    if exist "!PIDFILE!" del /q "!PIDFILE!" >nul 2>&1
+    if exist "!ERRORLOG!" del /q "!ERRORLOG!" >nul 2>&1
+    if exist "!DONEFLAG!" del /q "!DONEFLAG!" >nul 2>&1
+    if exist "!ELAPSEDFILE!" del /q "!ELAPSEDFILE!" >nul 2>&1
+    exit /b 130
 )
 echo.
 
@@ -196,11 +196,6 @@ if "!HARDFAIL!"=="1" (
     exit /b 1
 )
 
-if "!EXIT_NONZERO!"=="1" (
-    echo %C_WARN%  [WARNING] python exited with code !EXITCODE! after the video was%C_RESET%
-    echo %C_WARN%  already saved -- likely a harmless shutdown crash, not a real failure.%C_RESET%
-)
-
 REM Pull the exact output path main.py reported, and confirm it's
 REM really on disk before treating this as a success (per spec: never
 REM delete the source image on an unconfirmed/assumed success).
@@ -217,6 +212,14 @@ if not exist "!OUTVIDEO!" (
     pause
     exit /b 1
 )
+
+set "COMPLETED_SECONDS=0"
+if exist "!ELAPSEDFILE!" set /p COMPLETED_SECONDS=<"!ELAPSEDFILE!"
+set /a COMPLETED_MINUTES=COMPLETED_SECONDS/60
+set /a COMPLETED_REMAINDER=COMPLETED_SECONDS%%60
+if !COMPLETED_REMAINDER! LSS 10 (set "DISPLAY_COMPLETED_SECONDS=0!COMPLETED_REMAINDER!") else (set "DISPLAY_COMPLETED_SECONDS=!COMPLETED_REMAINDER!")
+echo %C_PROMPT%     Work completed (!COMPLETED_MINUTES!m !DISPLAY_COMPLETED_SECONDS!s)%C_RESET%
+if exist "!ELAPSEDFILE!" del /q "!ELAPSEDFILE!" >nul 2>&1
 
 call :BuildHashtags
 
@@ -258,10 +261,9 @@ REM Subroutines
 REM ============================================================
 
 :ClearCache
-REM Same cache-clear mechanism as before -- asks Python for the
-REM resolved cache path so this keeps working even if cache_dir is
-REM ever changed in config.json.
-    for /f "usebackq delims=" %%c in (`"%VENV_PYTHON%" -c "from src.config import load_config; c=load_config(); print(c.abspath(c.cache_dir))"`) do set "CACHE_DIR=%%c"
+REM config.json uses a project-relative cache directory, so avoid
+REM invoking a nested quoted Python command from cmd.exe here.
+set "CACHE_DIR=%CD%\cache"
 if defined CACHE_DIR (
     if exist "!CACHE_DIR!" (
         del /q "!CACHE_DIR!\*" >nul 2>&1

@@ -54,6 +54,18 @@ assets/music/*
 # Python bytecode caches
 __pycache__/
 *.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local test and coverage output
+.coverage
+coverage.xml
+htmlcov/
+
+# Windows crash dumps and editor backups
+*.dmp
+*.orig
 
 # Temporary and generated media files
 *.tmp
