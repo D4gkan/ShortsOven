@@ -38,7 +38,7 @@ each story, including instructions for emotional changes within the narration.
 It does not rewrite the text or select the speaker. Delivery quality depends on
 both the tone model and Qwen's interpretation of the instruction.
 
-## Setup on Windows
+## Installation on Windows
 
 1. Install **Python 3.11** with the Windows Python launcher. This is the supported
    target for the compatibility constraints in `requirements.txt`.
@@ -49,15 +49,19 @@ both the tone model and Qwen's interpretation of the instruction.
    missing, installs Python dependencies into `venv`, checks their compatibility,
    and downloads OCR, TTS and alignment models. Downloads require internet and
    several gigabytes of free disk space. Setup stops if a required step fails.
-5. Add your media to the folders below, then run `start.bat`.
-
 An existing environment must use Python 3.11. If it uses another version or its
 interpreter is broken, rename `venv` and rerun setup to create a fresh environment.
 The scripts use `venv\Scripts\python.exe` directly; activation is unnecessary.
 A capable NVIDIA GPU can speed up inference, but CPU execution is supported and
 can be slow. GPU use requires compatible drivers and CUDA-enabled dependencies.
 
-## Inputs and running
+## Configuration
+
+ShortsOven reads runtime settings from `config.json`. The checked-in file is a
+working default configuration, so you can run the project without changing it.
+Configuration paths may be absolute or relative to the project folder.
+
+### Media inputs
 
 | Folder | Supported files |
 |---|---|
@@ -70,24 +74,7 @@ clips are joined until they cover the story; a single available clip loops.
 Use clear screenshots: cleanup can mistake mixed letter/digit tokens for handles,
 and spelling correction can alter unusual words.
 
-**Batch:** double-click `start.bat`, choose M or F once, and let it process
-`assets/images/`. It writes logs to `logs/`, gives each finished video a randomized
-hashtag filename, and **deletes its source screenshot after successful output
-verification and renaming**. Keep copies of screenshots you want to retain.
-The batch stops on failure and keeps the failed screenshot. Escape during the
-timer stops the Python worker. The batch clears intermediate cache files after
-each completed attempt.
-
-**Single video, retaining the source:**
-
-```powershell
-.\venv\Scripts\python.exe main.py --image "C:\Stories\story.png"
-```
-
-Omit `--image` to select a random screenshot from `assets/images/`. Results go to
-`output/`. Run one job at a time because intermediate file names are shared.
-
-## Ollama tone settings
+### Ollama tone settings
 
 Edit `config.json`:
 
@@ -119,7 +106,7 @@ Ollama is a separate application, not a Python requirement. With the default
 loopback address and downloaded local models, story processing stays on your PC.
 Changing the URL to another machine sends the cleaned story there.
 
-## Other configuration
+### Other configuration
 
 | Setting | Purpose |
 |---|---|
@@ -138,6 +125,25 @@ Tone and speed are selected anew for each story; static `qwen_tts_instruct` and
 `voice_speed` values are overridden by the Ollama result. Configuration paths
 may be absolute or project-relative. The batch launcher uses `assets/images/`,
 `logs/` and `cache/` directly; keep those directory defaults for batch operation.
+
+## Running
+
+**Batch:** double-click `start.bat`, choose M or F once, and let it process
+`assets/images/`. It writes logs to `logs/`, gives each finished video a randomized
+hashtag filename, and **deletes its source screenshot after successful output
+verification and renaming**. Keep copies of screenshots you want to retain.
+The batch stops on failure and keeps the failed screenshot. Escape during the
+timer stops the Python worker. The batch clears intermediate cache files after
+each completed attempt.
+
+**Single video, retaining the source:**
+
+```powershell
+.\venv\Scripts\python.exe main.py --image "C:\Stories\story.png"
+```
+
+Omit `--image` to select a random screenshot from `assets/images/`. Results go to
+`output/`. Run one job at a time because intermediate file names are shared.
 
 ## Models and storage
 
