@@ -48,6 +48,11 @@ class Renderer:
                narration_path: str, music_path: str, duration_sec: float,
                display_w: int, display_h: int, out_path: str) -> str:
         _require_ffmpeg()
+        for label, path in (("background", background_path), ("screenshot", image_path),
+                            ("reveal mask", mask_path), ("narration", narration_path),
+                            ("music", music_path)):
+            if not os.path.isfile(path):
+                raise RenderError(f"Missing {label} input: {path}")
         log.info("Rendering video...")
 
         w, h = self.cfg.width, self.cfg.height
@@ -102,6 +107,7 @@ class Renderer:
                 cmd_sw = list(cmd)
                 idx = cmd_sw.index("-c:v")
                 cmd_sw[idx + 1] = "libx264"
+                cmd_sw[cmd_sw.index("-preset") + 1] = "medium"
                 result = subprocess.run(cmd_sw, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
             if result.returncode != 0:

@@ -163,7 +163,7 @@ class AssetManager:
         the normal random/weighted logic below.
         """
         if forced_image:
-            image = forced_image
+            image = os.path.abspath(forced_image)
         else:
             image = random.choice(self._list_files("images", IMAGE_EXTS)) \
                 if self.cfg.random_image else self._list_files("images", IMAGE_EXTS)[0]
@@ -278,6 +278,7 @@ class AssetManager:
                 cmd_sw = list(cmd)
                 idx = cmd_sw.index("-c:v")
                 cmd_sw[idx + 1] = "libx264"
+                cmd_sw[cmd_sw.index("-preset") + 1] = "medium"
                 result = subprocess.run(cmd_sw, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
             if result.returncode != 0:

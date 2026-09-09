@@ -99,7 +99,7 @@ class ToneTests(unittest.TestCase):
              patch.object(main, "ToneEngine") as engine, \
              patch.object(main, "QwenTTSEngine") as tts, \
              patch.object(main, "AlignmentEngine") as aligner, \
-             patch.object(main, "RevealBuilder"), patch.object(main, "Renderer"):
+             patch.object(main, "RevealBuilder"), patch.object(main, "Renderer") as renderer:
             image.return_value.__enter__.return_value.size = (600, 800)
             ocr.return_value.detect_lines.side_effect = lambda _: events.append("ocr") or lines
             engine.return_value.analyze.side_effect = lambda _: events.append("tone") or tone
@@ -107,6 +107,11 @@ class ToneTests(unittest.TestCase):
             aligner.return_value.build_narration.return_value = [SimpleNamespace(end_sec=1)]
             self.assertEqual(main.run(), 0)
             self.assertEqual(events, ["ocr", "cleanup", "tone", "tts"])
+            working_image = ocr.return_value.detect_lines.call_args.args[0]
+            self.assertTrue(working_image.endswith("source_image.png"))
+            image.return_value.__enter__.return_value.convert.return_value.save.assert_called_once_with(
+                working_image, format="PNG")
+            self.assertEqual(renderer.return_value.render.call_args.kwargs["image_path"], working_image)
             engine.return_value.analyze.assert_called_once_with("Cleaned story.")
             self.assertEqual(tts.call_args.args[0].qwen_tts_instruct, VALID["instruct"])
             engine.return_value.analyze.side_effect = ToneError("Unavailable")

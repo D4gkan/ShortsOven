@@ -71,9 +71,12 @@ def run():
         log.info("Loading image...")
         with Image.open(selected.image_path) as im:
             orig_w, orig_h = im.size
+            # Keep OCR and rendering on identical pixels if the original moves.
+            working_image = cfg.abspath(os.path.join(cfg.cache_dir, "source_image.png"))
+            im.convert("RGB").save(working_image, format="PNG")
 
         ocr = OCREngine(cfg)
-        lines = ocr.detect_lines(selected.image_path)
+        lines = ocr.detect_lines(working_image)
         lines = clean_lines(lines)
 
         story = " ".join(line.text.strip() for line in lines if line.text.strip())
@@ -101,7 +104,7 @@ def run():
         out_path = cfg.abspath(os.path.join(cfg.output_dir, out_name))
         renderer.render(
             background_path=prepared_bg_path,
-            image_path=selected.image_path,
+            image_path=working_image,
             mask_path=mask_path,
             narration_path=narration_path,
             music_path=selected.music_path,
