@@ -210,8 +210,7 @@ def clean_lines(lines: List[TextLine]) -> List[TextLine]:
     detected line. Lines that consist ENTIRELY of a username (and
     therefore become empty after stripping) are dropped from the
     list entirely -- there's nothing left to narrate or reveal, and
-    passing empty text to Piper crashes its WAV writer with
-    '# channels not specified'."""
+    empty text must never reach tone analysis or speech generation."""
     cleaned_lines = []
     for line in lines:
         no_usernames = remove_usernames(line.text)

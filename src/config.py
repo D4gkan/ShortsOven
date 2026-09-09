@@ -29,8 +29,12 @@ class AppConfig:
     narration_volume: float = 1.0
     music_fade_in_sec: float = 1.5
     music_fade_out_sec: float = 2.0
-    voice_speed: float = 1.18
+    # Delivery is selected per story by Ollama before TTS.
+    voice_speed: float = 1.0
     voice: str = "male"
+    ollama_url: str = "http://127.0.0.1:11434"
+    ollama_model: str = "qwen2.5:7b-instruct-q4_K_M"
+    ollama_timeout_sec: float = 180.0
 
     # --- OCR (PaddleOCR) ---
     ocr_lang: str = "en"
@@ -42,30 +46,14 @@ class AppConfig:
     qwen_tts_model_dir: str = "models/qwen_tts"
     qwen_tts_device: str = "auto"  # "auto" | "cpu" | "cuda:0"
     qwen_tts_language: str = "English"
-    # Natural-language delivery instruction sent to Qwen3-TTS on every
-    # call (its `instruct` param -- the model's actual mechanism for
-    # controlling pace/pitch/emotion, e.g. Qwen's own docs use
-    # instruct="说得非常愤怒" for an angry read). Left unset before,
-    # the model defaulted to a fast, emphatic, "read-aloud" delivery.
-    qwen_tts_instruct: str = (
-        "Speak with high energy and genuine excitement, like you can't "
-        "wait to tell someone this story -- quick, lively pacing, "
-        "animated inflection, real enthusiasm and rising energy on the "
-        "interesting parts, but still natural and conversational, never "
-        "robotic or shouty."
-    )
+    qwen_tts_instruct: str = "Speak naturally and conversationally."
     # Real Qwen3-TTS-12Hz-1.7B-CustomVoice preset speakers, filtered to the
     # male-sounding presets (Vivian/Serena/Ono_Anna/Sohee are female).
     # Verify against model.get_supported_speakers() for your checkpoint.
     qwen_male_voice_candidates: List[str] = field(
         default_factory=lambda: ["Ryan", "Aiden", "Eric", "Dylan", "Uncle_Fu"]
     )
-    # Same idea for the female voice: Vivian ("bright, slightly edgy") is
-    # more energetic; Serena ("warm, gentle") is calmer. Ordered
-    # energetic-first here, matching qwen_male_voice_candidates. This
-    # field didn't exist in config.py before -- tts_engine.py only had a
-    # hardcoded internal fallback (Serena-first, i.e. calm-first) that
-    # was used whenever config.json didn't set this explicitly.
+    # Preset preference order within the selected gender.
     qwen_female_voice_candidates: List[str] = field(
         default_factory=lambda: ["Sohee", "Ono_Anna", "Serena", "Vivian"]
     )

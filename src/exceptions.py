@@ -20,9 +20,13 @@ class OCRError(RedditVideoGenError):
     """Raised when OCR fails to run or returns no usable text."""
 
 
+class ToneError(RedditVideoGenError):
+    """Raised when Ollama cannot provide a valid narration configuration."""
+
+
 class TTSError(RedditVideoGenError):
     """Raised when narration cannot be generated with a valid offline
-    male voice model."""
+    voice model."""
 
 
 class AlignmentError(RedditVideoGenError):

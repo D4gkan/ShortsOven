@@ -22,11 +22,10 @@ A post that's merely "mildly interesting" won't move. Pick a target strong
 enough that someone would tag a friend or reply within three seconds of
 reading it.
 
-The story itself should be weird, funny, shocking, chaotic, lively, and
-exciting. Boring, flat, or slowly-building stories are not allowed. The core
-story should feel like a real person is urgently telling the most unbelievable
-thing they saw, heard, or found online, with a strong sense of momentum and
-surprise.
+Match the story's pace to its emotional target. It can be funny and lively,
+quietly moving, reflective, or slowly suspenseful. Keep the situation specific
+and compelling without forcing excitement. The narration pipeline analyzes
+the finished story with Ollama and chooses a fitting delivery before TTS.
 
 Favor stories that feel genuinely alarming, uncanny, darkly funny, or deeply
 strange. The best versions hit with a sharp mix of disbelief, dread, and
@@ -431,8 +430,8 @@ could pick up as noise.
 ## 10. Before finalizing, check
 
 - Did I pick a single emotional target and let it drive every choice?
-- Is the story weird, funny, shocking, exciting, and energetic enough to match
-  a lively spoken TTS delivery?
+- Does the story's emotional tone fit its situation, with a clear progression
+  that can guide the adaptive spoken delivery?
 - Does the story have a sharp, darkly funny, unsettling, or shocking edge?
 - Is the reaction line free of any explanation of its own joke?
 - Do the comments carry a dark, sarcastic, dry, or wry tone rather than

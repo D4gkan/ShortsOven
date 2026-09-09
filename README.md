@@ -1,175 +1,195 @@
-# ShortsOven
+<p align="center">
+  <img src="logo.png" alt="ShortsOven logo" width="280">
+</p>
 
-[![Windows](https://img.shields.io/badge/platform-Windows-0078D4?logo=windows&logoColor=white)](https://www.microsoft.com/windows)
-[![Python](https://img.shields.io/badge/python-3.9--3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![Offline](https://img.shields.io/badge/runtime-fully%20offline-2EA44F)](#offline-models)
-[![FFmpeg](https://img.shields.io/badge/media-FFmpeg-007808?logo=ffmpeg&logoColor=white)](https://ffmpeg.org/)
+<h1 align="center">ShortsOven</h1>
 
-Fully offline generator for TikTok/Shorts/Reels-style "Reddit story"
-videos: a screenshot reveals top-to-bottom in sync with AI narration,
-over a looping background video, with background music mixed in.
+<p align="center">
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&amp;logoColor=white" alt="Python 3.11"></a>
+  <img src="https://img.shields.io/badge/Platform-Windows-0078D4" alt="Windows">
+  <a href="https://ollama.com/"><img src="https://img.shields.io/badge/Tone-Ollama-111111?logo=ollama&amp;logoColor=white" alt="Ollama tone analysis"></a>
+  <a href="https://github.com/QwenLM/Qwen3-TTS"><img src="https://img.shields.io/badge/Voice-Qwen3--TTS-7C3AED" alt="Qwen3-TTS"></a>
+  <a href="https://ffmpeg.org/"><img src="https://img.shields.io/badge/Video-FFmpeg-007808?logo=ffmpeg&amp;logoColor=white" alt="FFmpeg"></a>
+  <img src="https://img.shields.io/badge/Inference-Local-2EA44F" alt="Local inference">
+</p>
 
-No paid APIs. No OpenAI. No ElevenLabs. No gTTS/pyttsx3. Everything —
-OCR, narration, and rendering — runs locally once setup finishes.
+Turn story screenshots into vertical videos with narration that fits the situation.
+ShortsOven reads the screenshot, asks your local Ollama model how it should sound,
+then generates a continuous Qwen3-TTS narration. The screenshot reveals from top to
+bottom over background footage, with music mixed underneath.
 
-## Quick Start (Windows)
+## What happens for each story
 
-1. Install [Python 3.9 through 3.13](https://www.python.org/downloads/).
-  Python 3.11-3.13 is recommended because PaddlePaddle does not currently
-  provide wheels for every newer Python release.
-2. Install [FFmpeg](https://ffmpeg.org/download.html) and add its `bin`
-  directory to the Windows `PATH`.
-3. Clone this repository and open the project folder.
-4. Double-click `setup.bat`. It creates `venv`, installs `requirements.txt`,
-  and downloads the local AI models. Setup is the only step that needs
-  internet access.
-5. Add source files to `assets/images/`, `assets/backgrounds/`, and
-  `assets/music/`.
-6. Double-click `start.bat`, choose a voice gender with `M` or `F`, and wait
-  for each video. The console shows a live elapsed timer. Press `Esc` once
-  during `Working (...)` to stop the active video safely. The source image is
-  kept when a job is interrupted or fails.
-7. Find completed videos in `output/` and diagnostic logs in `logs/`.
+1. **Read:** PaddleOCR extracts text lines and their positions.
+2. **Clean:** remove username-like tokens and correct common spelling errors.
+3. **Choose delivery:** Ollama receives the complete cleaned story and returns a
+   tone, a natural-language delivery instruction, and a speed multiplier.
+4. **Speak:** Qwen3-TTS reads that same text in one continuous take using the
+   selected delivery and your chosen voice gender.
+5. **Synchronize:** faster-whisper transcribes the audio with word timestamps;
+   fuzzy matching maps those words back to screenshot lines. Unmatched lines
+   use a logged timing fallback, so alignment is best-effort rather than exact.
+6. **Render:** FFmpeg combines narration, music, background clips and the reveal
+   animation. Default output is 1080 × 1920, 60 fps, H.264/AAC.
 
-## Repository and asset policy
+Sad stories can receive a restrained, compassionate delivery; jokes can be dry
+and playful; suspense can build gradually. Ollama provides one configuration for
+each story, including instructions for emotional changes within the narration.
+It does not rewrite the text or select the speaker. Delivery quality depends on
+both the tone model and Qwen's interpretation of the instruction.
 
-Large local assets, generated videos, logs, caches, and downloaded model
-weights are intentionally excluded from GitHub. The `assets/` folders contain
-`.gitkeep` placeholders so they are recreated when the repository is cloned.
-Use media that you own or have permission to use; do not commit copyrighted
-music, stock footage, personal screenshots, or model weights to this repo.
+## Setup on Windows
 
-The application is a local Windows batch workflow rather than a hosted web
-service. After cloning, `setup.bat` downloads the required models into the
-ignored `models/` directory and `start.bat` runs the generator offline.
-Both scripts call `venv\Scripts\python.exe` directly, so they do not depend
-on virtual-environment activation or the system Python selected by PATH.
+1. Install **Python 3.11** with the Windows Python launcher. This is the supported
+   target for the compatibility constraints in `requirements.txt`.
+2. Install [FFmpeg](https://ffmpeg.org/download.html). Put the folder containing
+   both `ffmpeg.exe` and `ffprobe.exe` on `PATH`.
+3. Install and open [Ollama](https://ollama.com/download/windows).
+4. Double-click `setup.bat`. It checks Ollama, pulls the configured tone model if
+   missing, installs Python dependencies into `venv`, checks their compatibility,
+   and downloads OCR, TTS and alignment models. Downloads require internet and
+   several gigabytes of free disk space. Setup stops if a required step fails.
+5. Add your media to the folders below, then run `start.bat`.
 
-## How it works
+An existing environment must use Python 3.11. If it uses another version or its
+interpreter is broken, rename `venv` and rerun setup to create a fresh environment.
+The scripts use `venv\Scripts\python.exe` directly; activation is unnecessary.
+A capable NVIDIA GPU can speed up inference, but CPU execution is supported and
+can be slow. GPU use requires compatible drivers and CUDA-enabled dependencies.
 
-| Stage | Module | What it does |
-|---|---|---|
-| Asset selection | `src/asset_manager.py` | Randomly picks one image, one background, one music track; loops/trims the background to match narration length |
-| OCR | `src/ocr_engine.py` | PaddleOCR detects text **lines** (rows), not sentences, with `x/y/width/height` for each |
-| Cleanup | `src/text_cleanup.py` | SymSpell fixes minor OCR typos (`Thls` → `This`) before narration |
-| Narration | `src/tts_engine.py` | Qwen3-TTS CustomVoice generates local neural narration using the selected voice gender |
-| Alignment | `src/alignment.py` | Builds the narration from real synthesized audio per line, so each line's exact start/end time is measured, not estimated; optionally refined with `faster-whisper` word timestamps |
-| Reveal animation | `src/reveal.py` | Builds a black/white mask video: holds still between lines, eases smoothly (accelerate → decelerate → stop) while each line is spoken, always top→bottom only |
-| Rendering | `src/renderer.py` | ffmpeg `alphamerge` + `overlay` composites the (never-cropped, never-moved) screenshot through the moving mask onto the background, mixes ducked/faded music with narration, encodes H.264/AAC 1080×1920 |
+## Inputs and running
 
-## Configuration (`config.json`)
-
-The checked-in configuration is tuned for the current developer PC: automatic
-device selection, CPU-safe PaddleOCR, 1080x1920 output, hardware-accelerated
-encoding when available, and the Qwen3-TTS 1.7B CustomVoice model.
-
-Important fields include:
-
-| Field | Purpose |
+| Folder | Supported files |
 |---|---|
-| `qwen_tts_model_id` | Hugging Face model repository used by the downloader |
-| `qwen_tts_model_dir` | Local Qwen model directory, relative to the project |
-| `qwen_tts_device` | `auto`, `cpu`, or a CUDA device such as `cuda:0` |
-| `qwen_male_voice_candidates` | Qwen speaker presets tried for male narration |
-| `qwen_female_voice_candidates` | Qwen speaker presets tried for female narration |
-| `paddleocr_device` | OCR device selection; use `cpu` for maximum compatibility |
-| `whisper_device` | Alignment device: `auto`, `cpu`, or `cuda` |
-| `whisper_compute_type` | Alignment precision such as `int8` or `float16` |
-| `cache_dir`, `output_dir`, `assets_dir`, `models_dir` | Project-relative storage locations |
+| `assets/images/` | PNG, JPG, JPEG, WebP story screenshots |
+| `assets/backgrounds/` | MP4, MOV, MKV, WebM background clips |
+| `assets/music/` | MP3, WAV, M4A, OGG music tracks |
 
-For example, to use a model downloaded elsewhere:
+All three categories need at least one file. For longer narration, background
+clips are joined until they cover the story; a single available clip loops.
+Use clear screenshots: cleanup can mistake mixed letter/digit tokens for handles,
+and spelling correction can alter unusual words.
+
+**Batch:** double-click `start.bat`, choose M or F once, and let it process
+`assets/images/`. It writes logs to `logs/`, gives each finished video a randomized
+hashtag filename, and **deletes its source screenshot after successful output
+verification and renaming**. Keep copies of screenshots you want to retain.
+The batch stops on failure and keeps the failed screenshot. Escape during the
+timer stops the Python worker. The batch clears intermediate cache files after
+each completed attempt.
+
+**Single video, retaining the source:**
+
+```powershell
+.\venv\Scripts\python.exe main.py --image "C:\Stories\story.png"
+```
+
+Omit `--image` to select a random screenshot from `assets/images/`. Results go to
+`output/`. Run one job at a time because intermediate file names are shared.
+
+## Ollama tone settings
+
+Edit `config.json`:
 
 ```json
 {
-  "qwen_tts_model_dir": "D:/AI/ShortsOven/qwen_tts",
-  "qwen_tts_device": "cuda:0",
-  "whisper_device": "cuda",
-  "whisper_compute_type": "float16"
+  "ollama_url": "http://127.0.0.1:11434",
+  "ollama_model": "qwen2.5:7b-instruct-q4_K_M",
+  "ollama_timeout_sec": 180
 }
 ```
 
-Paths may be absolute or project-relative. After changing
-`qwen_tts_model_id`, run `venv\Scripts\python.exe scripts\download_models.py`
-again. If the new checkpoint has different speaker names, replace the voice
-candidate lists with names supported by that checkpoint. The application does
-not silently switch to another gender or a system voice.
+The default matches the general instruction model installed on the development
+PC. To use another local instruction model, set its exact name from `ollama list`.
+Check or prepare it with:
 
-## Offline Models
+```powershell
+.\venv\Scripts\python.exe scripts\check_ollama.py --pull
+```
 
-`setup.bat` downloads the following models once:
+The integration uses Ollama's [structured JSON outputs](https://docs.ollama.com/capabilities/structured-outputs)
+and [chat API](https://docs.ollama.com/api/chat). It validates all returned fields
+and limits speed to 0.85–1.15×. Ollama is asked to unload its model after responding,
+freeing memory for TTS. Requests time out after the configured interval.
+Stories above 16,000 cleaned characters are rejected rather than silently cut off.
+If Ollama is unavailable or returns invalid settings, the job stops before TTS.
+There is no automatic energetic fallback.
 
-1. **PaddleOCR PP-OCR** for text detection and recognition. PaddleOCR stores
-  its downloaded weights in its normal local Paddle cache.
-2. **Qwen3-TTS 1.7B CustomVoice** in `qwen_tts_model_dir` (default:
-  `models/qwen_tts/`).
-3. **Qwen3-TTS Tokenizer** in `models/qwen_tts_tokenizer/`.
-4. **faster-whisper `base.en`** in the local Hugging Face cache for forced
-  alignment. The model is required for line timing.
+Ollama is a separate application, not a Python requirement. With the default
+loopback address and downloaded local models, story processing stays on your PC.
+Changing the URL to another machine sends the cleaned story there.
 
-The model files are intentionally ignored by Git because they are large.
-Developers can use different local model locations by changing the paths in
-`config.json`; they do not need to change the Python source. Run the downloader
-again after changing a model ID or deleting a model directory.
+## Other configuration
 
-The requirements pin `torch==2.7.1` and `torchaudio==2.7.1` to matching
-releases. This prevents Windows DLL errors caused by incompatible Torch
-package versions during PaddleOCR or Qwen TTS startup.
+| Setting | Purpose |
+|---|---|
+| `voice` | Default `male` or `female` for single runs; batch choice overrides it |
+| `qwen_male_voice_candidates`, `qwen_female_voice_candidates` | Speaker presets tried in order within the chosen gender |
+| `qwen_tts_model_id`, `qwen_tts_model_dir` | CustomVoice checkpoint and local weights directory |
+| `qwen_tts_device` | `auto`, `cpu`, or a CUDA device such as `cuda:0` |
+| `paddleocr_device` | `auto`, `cpu`, or `gpu`; default auto uses CPU unless GPU is enabled |
+| `ocr_lang`, `qwen_tts_language` | OCR and speech languages; alignment currently uses English `base.en` |
+| `whisper_device`, `whisper_compute_type` | Alignment device and numeric precision |
+| `music_volume`, `narration_volume`, `narration_mix_gain` | Music, voice and final mix levels |
+| `resolution`, `fps`, `video_bitrate` | Output dimensions, frame rate and bitrate |
+| `use_hardware_acceleration` | Try NVIDIA NVENC encoding, with a software fallback |
 
-## Caching
+Tone and speed are selected anew for each story; static `qwen_tts_instruct` and
+`voice_speed` values are overridden by the Ollama result. Configuration paths
+may be absolute or project-relative. The batch launcher uses `assets/images/`,
+`logs/` and `cache/` directly; keep those directory defaults for batch operation.
 
-- OCR results are cached per image (by content hash) in `cache/`, so
-  re-running on the same screenshot skips OCR entirely.
-- Narration clips are cached per (voice, text), so unchanged lines are
-  never re-synthesized.
+## Models and storage
 
-## Batch Controls
+- `models/qwen_tts/` contains Qwen3-TTS 1.7B CustomVoice and its bundled
+  `speech_tokenizer/`. A separate tokenizer download is unnecessary.
+- PaddleOCR weights live in Paddle's normal user cache.
+- faster-whisper `base.en` weights live in the Hugging Face cache.
+- Ollama manages its own model storage outside this project.
+- `cache/` holds OCR results, speech and intermediate video files. OCR is keyed
+  by image contents. Speech caching includes text, speaker, tone instruction,
+  speed, language and model identity. Single runs retain the cache; batch runs
+  clear it, including background/music selection history.
+- `output/` holds finished videos; `logs/` holds batch diagnostics.
 
-`start.bat` runs one visible console session and launches the Python worker in
-the background. `scripts/batch_status.ps1` keeps the timer and Escape monitor
-alive for the full duration of each video, so the displayed completion time is
-measured from the same monitor. `scripts/check_escape.ps1` is retained as a
-small standalone key-state check for troubleshooting.
-
-Pressing `Esc` terminates the active Python process tree, removes temporary
-control files, keeps the source image, and exits with `Work interrupted`.
+Keep media, model weights, environments and generated artifacts out of Git;
+`.gitignore` handles these paths. `PROMPT.txt` is the optional screenshot-generation
+brief, not a runtime instruction file.
 
 ## Troubleshooting
 
-- **"ffmpeg was not found on PATH"** — install ffmpeg and add its
-  `bin` folder to your system PATH.
-- **"Qwen3-TTS model weights not found"** — re-run `setup.bat`, or run
-  `venv\Scripts\python.exe scripts\download_models.py` directly.
-- **Unsupported Qwen speaker names** — inspect the speakers supported by the
-  downloaded checkpoint and update the matching voice candidate list in
-  `config.json`.
-- **"Ignoring invalid distribution ~orch"** — an interrupted Torch install
-  left temporary folders in the virtual environment. Run `setup.bat` again;
-  it repairs the matching Torch and Torchaudio installation.
-- **Torch DLL or `WinError 127` errors** — close running generator windows
-  and run `setup.bat` again so the pinned Torch packages are reinstalled.
-- **The setup log uses Python 3.14** — the scripts should report the venv
-  interpreter and Python 3.11, 3.12, or 3.13. If the venv was copied from
-  another folder, run `setup.bat` again to recreate it in this project.
-- **"OCR found no text"** — use a clearer, higher-resolution
-  screenshot.
-- Full stack traces and clear explanations are always printed to the
-  console — the app never fails silently.
+- **Ollama connection error:** open Ollama or run `ollama serve`; check the URL.
+- **Missing tone model:** run the check command above with `--pull`.
+- **Tone timeout:** increase `ollama_timeout_sec` or choose a smaller installed
+  instruction model. Cold model loading can take longer than later requests.
+- **Invalid tone response:** retry or select another instruction-following model.
+- **Missing Qwen/OCR/Whisper weights:** rerun setup or
+  `venv\Scripts\python.exe scripts\download_models.py`.
+- **GPU errors:** try `qwen_tts_device: "cpu"`, `whisper_device: "cpu"` and
+  `use_hardware_acceleration: false`. For OCR use `paddleocr_device: "cpu"`.
+- **Package errors:** read the actual install/import error. Setup retains matching
+  Torch/Torchaudio versions and the existing Windows compatibility constraints;
+  it does not change Windows security settings.
 
-## Project structure
+## Development
 
+```powershell
+.\venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
-setup.bat / start.bat        one-click install & run
-requirements.txt             Python dependencies
-config.json                  all tunables
-main.py                      pipeline entry point
-src/                         config, logging, OCR, TTS, alignment,
-                              reveal animation, rendering, asset mgmt
-scripts/download_models.py   one-time offline model downloader
-scripts/batch_status.ps1      live timer and Escape monitor
-scripts/check_escape.ps1      standalone Escape key check
-assets/{images,backgrounds,music}   your input files (empty by default)
-cache/                       OCR/TTS cache + intermediate render files
-output/                      finished videos land here
-models/                      downloaded Qwen model weights
-models/qwen_tts_tokenizer/   downloaded Qwen tokenizer files
+
+Focused tests cover the tone API boundary, rejection paths, pipeline ordering,
+TTS instruction forwarding and cache separation. They do not download models.
+
+```text
+main.py                     single-story pipeline
+config.json                 application settings
+requirements.txt            Python dependencies and compatibility constraints
+setup.bat / start.bat       install / batch run
+src/                        OCR, tone, TTS, alignment, reveal and rendering
+scripts/check_ollama.py      Ollama readiness and optional model pull
+scripts/download_models.py required OCR/TTS/alignment downloads
+scripts/batch_status.ps1     elapsed timer and Escape monitoring
+tests/                      current tone integration regression tests
+logo.png / PROMPT.txt       branding / optional screenshot creation brief
+assets/                     source images, footage and music
 ```

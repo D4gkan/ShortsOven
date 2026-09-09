@@ -1,201 +1,44 @@
 @echo off
-setlocal enabledelayedexpansion
+setlocal
 cd /d "%~dp0"
+echo ShortsOven - Setup
+set "PYTHONUTF8=1"
 
-echo ============================================
-echo  AI Reddit Story Video Generator - Setup
-echo ============================================
-echo.
+where ffmpeg >nul 2>&1
+if errorlevel 1 goto NO_FFMPEG
+where ffprobe >nul 2>&1
+if errorlevel 1 goto NO_FFMPEG
 
-REM ============================================================
-REM Detect and select Python version
-REM PaddleOCR supports Python 3.9 - 3.13
-REM ============================================================
-
-set PYTHON_CMD=python
-set PYTHON_VERSION=
-
-for /f "tokens=*" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
-
-echo Checking Python version: %PYTHON_VERSION%
-
-for /f "tokens=2" %%i in ('python --version 2^>^&1') do (
-    for /f "tokens=1,2 delims=." %%a in ('echo %%i') do (
-        set PYTHON_MAJOR=%%a
-        set PYTHON_MINOR=%%b
-    )
-)
-
-if "!PYTHON_MAJOR!"=="3" (
-    if !PYTHON_MINOR! gtr 13 (
-        echo [WARNING] Python 3.!PYTHON_MINOR! detected, but PaddleOCR only supports 3.9-3.13.
-        echo Attempting to fall back to Python 3.13, 3.12, 3.11...
-
-        set FOUND_ALT=0
-
-        for %%v in (3.13 3.12 3.11 3.10) do (
-            py -%%v --version >nul 2>&1
-            if !errorlevel! equ 0 (
-                echo [OK] Found Python %%v via Windows Python launcher.
-                set PYTHON_CMD=py -%%v
-                set FOUND_ALT=1
-                goto PYTHON_OK
-            )
-        )
-
-        if !FOUND_ALT! equ 0 (
-            echo.
-            echo [ERROR] No supported Python version was found.
-            echo Please install Python 3.11, 3.12 or 3.13.
-            pause
-            exit /b 1
-        )
-    )
-)
-
-:PYTHON_OK
-
-echo.
-echo [OK] Python version OK:
-%PYTHON_CMD% --version
-
-echo.
-
-REM ============================================================
-REM Verify FFmpeg
-REM ============================================================
-
-ffmpeg -version >nul 2>&1
-
+if exist "venv\Scripts\python.exe" goto CHECK_PYTHON
+py -3.11 -m venv venv
 if errorlevel 1 (
-    echo [ERROR] ffmpeg was not found on PATH.
-    echo Download FFmpeg and add its "bin" folder to PATH.
-    pause
-    exit /b 1
+    echo [ERROR] Install Python 3.11 with the Windows Python launcher, then retry.
+    goto FAILED
 )
-
-echo [OK] ffmpeg found.
-
-echo.
-
-REM ============================================================
-REM Create virtual environment
-REM ============================================================
-
-if not exist venv (
-    echo Creating virtual environment...
-    %PYTHON_CMD% -m venv venv
-
-    if errorlevel 1 (
-        echo.
-        echo [ERROR] Failed to create virtual environment.
-        pause
-        exit /b 1
-    )
-)
-
+:CHECK_PYTHON
 set "VENV_PYTHON=%CD%\venv\Scripts\python.exe"
-
-if not exist "%VENV_PYTHON%" (
-    echo.
-    echo [ERROR] Virtual environment interpreter was not created.
-    pause
-    exit /b 1
+"%VENV_PYTHON%" -c "import sys; sys.exit(0 if sys.version_info[:2] == (3,11) else 1)"
+if errorlevel 1 (
+    echo [ERROR] This setup supports Python 3.11. Rename the old venv folder and retry.
+    goto FAILED
 )
-
-echo Using virtual environment:
-"%VENV_PYTHON%" --version
-
-echo.
-
-REM ============================================================
-REM Upgrade pip
-REM ============================================================
-
-echo Upgrading pip...
-
+"%VENV_PYTHON%" scripts\check_ollama.py --pull
+if errorlevel 1 goto FAILED
 "%VENV_PYTHON%" -m pip install --upgrade pip
-
-if errorlevel 1 (
-    echo.
-    echo [ERROR] Failed to upgrade pip.
-    pause
-    exit /b 1
-)
-
-echo.
-
-REM ============================================================
-REM Install requirements
-REM ============================================================
-
-echo Installing Python requirements (this can take a while)...
-
+if errorlevel 1 goto FAILED
 "%VENV_PYTHON%" -m pip install -r requirements.txt
-
-if errorlevel 1 (
-    echo.
-    echo [WARNING] First installation attempt failed.
-    echo Retrying without cache...
-    echo.
-
-    "%VENV_PYTHON%" -m pip install --no-cache-dir -r requirements.txt
-)
-
-if errorlevel 1 (
-    echo.
-    echo ============================================================
-    echo ERROR
-    echo ============================================================
-    echo.
-    echo Failed to install one or more Python packages.
-    echo.
-    echo This is commonly caused by:
-    echo.
-    echo  - Windows Defender Application Control (WDAC)
-    echo  - Device Guard
-    echo  - AppLocker
-    echo  - Corporate security policies
-    echo.
-    echo If you are using a personal PC, try:
-    echo.
-    echo   1. Running setup.bat as Administrator
-    echo   2. Disabling Smart App Control temporarily
-    echo   3. Running:
-    echo.
-    echo      "%VENV_PYTHON%" -m pip install -r requirements.txt
-    echo.
-    pause
-    exit /b 1
-)
-
-echo.
-
-REM ============================================================
-REM Download AI models
-REM ============================================================
-
-echo Downloading offline OCR / TTS / alignment models...
-
+if errorlevel 1 goto FAILED
+"%VENV_PYTHON%" -m pip check
+if errorlevel 1 goto FAILED
 "%VENV_PYTHON%" scripts\download_models.py
+if errorlevel 1 goto FAILED
 
-if errorlevel 1 (
-    echo.
-    echo [ERROR] Failed to download AI models.
-    pause
-    exit /b 1
-)
-
-echo.
-
-echo ============================================
-echo  Setup complete!
-echo ============================================
-echo.
-echo 1. Drop images into assets\images
-echo 2. Drop backgrounds into assets\backgrounds
-echo 3. Drop music into assets\music
-echo 4. Run start.bat
-echo.
-
+echo Setup complete. Add media to assets and run start.bat.
 pause
+exit /b 0
+:NO_FFMPEG
+echo [ERROR] Install FFmpeg and add its bin folder to PATH. Both ffmpeg and ffprobe are required.
+:FAILED
+echo [ERROR] Setup did not finish. Resolve the error above and retry.
+pause
+exit /b 1

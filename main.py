@@ -1,19 +1,5 @@
 #!/usr/bin/env python3
-"""
-main.py
--------
-Entry point. Runs the full pipeline end-to-end with zero user
-interaction, per the spec:
-
-  1. Randomly select image / background / music from assets/
-  2. OCR the screenshot into human-readable lines (with coordinates)
-  3. Clean up OCR mistakes
-  4. Generate offline male narration & determine exact per-line timing
-     from the generated speech (never estimated)
-  5. Prepare the background video (loop/trim, scale to fill 1080x1920)
-  6. Build the speech-driven reveal mask animation
-  7. Render the final H.264/AAC vertical video with ffmpeg
-"""
+"""ShortsOven: OCR -> cleanup -> Ollama tone -> Qwen TTS -> alignment -> video."""
 
 import argparse
 import os
@@ -30,6 +16,7 @@ from src.asset_manager import AssetManager
 from src.ocr_engine import OCREngine
 from src.text_cleanup import clean_lines
 from src.tts_engine import QwenTTSEngine
+from src.tone_engine import ToneEngine
 from src.alignment import AlignmentEngine
 from src.reveal import RevealBuilder
 from src.renderer import Renderer
@@ -89,6 +76,8 @@ def run():
         lines = ocr.detect_lines(selected.image_path)
         lines = clean_lines(lines)
 
+        story = " ".join(line.text.strip() for line in lines if line.text.strip())
+        cfg = ToneEngine(cfg).analyze(story).apply(cfg)
         tts = QwenTTSEngine(cfg)
         aligner = AlignmentEngine(cfg, tts)
 

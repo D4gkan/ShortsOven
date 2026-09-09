@@ -2,6 +2,7 @@
 setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 chcp 65001 >nul
+set "PYTHONUTF8=1"
 
 title SHORTS OVEN
 
@@ -46,6 +47,12 @@ set "VENV_PYTHON=%CD%\venv\Scripts\python.exe"
 if not exist "%VENV_PYTHON%" (
     echo %C_ERR%  [ERROR]%C_RESET% Virtual environment interpreter not found. Run setup.bat first.
     echo.
+    pause
+    exit /b 1
+)
+
+"%VENV_PYTHON%" scripts\check_ollama.py
+if errorlevel 1 (
     pause
     exit /b 1
 )
@@ -240,6 +247,11 @@ if exist "!TARGETPATH!" (
 )
 
 move /y "!OUTVIDEO!" "!TARGETPATH!" >nul
+if errorlevel 1 (
+    echo [ERROR] Could not rename output. Source image kept.
+    pause
+    exit /b 1
+)
 echo %C_OK%     [OK] Saved: !TARGETPATH!%C_RESET%
 
 del /q "!CURRENT_IMAGE!" >nul 2>&1

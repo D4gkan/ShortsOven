@@ -1,17 +1,5 @@
 #!/usr/bin/env python3
-"""
-download_models.py
--------------------
-Run once (called automatically by setup.bat) to fetch every model
-needed for fully-offline operation afterwards:
-
-  - PaddleOCR (PP-OCRv6) detection/recognition/orientation weights
-  - Qwen3-TTS 1.7B model weights (male voice narration)
-  - faster-whisper base.en weights (REQUIRED for the forced-alignment
-    line timing in alignment.py, not optional)
-
-After this script finishes, main.py never needs a network connection.
-"""
+"""Download required OCR, Qwen CustomVoice (including speech tokenizer), and alignment weights."""
 
 import json
 import os
@@ -50,10 +38,12 @@ def download_paddleocr_models():
             # older PaddleOCR releases use a different constructor
             PaddleOCR(use_angle_cls=True, lang=lang, use_gpu=False, show_log=False)
         print("  OK")
+        return True
     except Exception as e:
         print(f"  FAILED: {e}")
         print("  PaddleOCR models could not be downloaded. Check your "
               "internet connection and re-run this script.")
+        return False
 
 
 def download_qwen_tts_model():
@@ -62,34 +52,19 @@ def download_qwen_tts_model():
     print("== Downloading Qwen3-TTS 1.7B model ==")
     cfg = _load_config()
     model_id = cfg.get("qwen_tts_model_id", "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice")
-    tokenizer_id = "Qwen/Qwen3-TTS-Tokenizer-12Hz"
     model_dir = os.path.join(PROJECT_ROOT, cfg.get("qwen_tts_model_dir", "models/qwen_tts"))
-    tokenizer_dir = os.path.join(PROJECT_ROOT, "models", "qwen_tts_tokenizer")
-    os.makedirs(model_dir, exist_ok=True)
-    os.makedirs(tokenizer_dir, exist_ok=True)
-
     try:
         from huggingface_hub import snapshot_download
-    except ImportError as e:
-        print(f"  FAILED: huggingface_hub is not installed ({e}). "
-              "Run `pip install huggingface_hub` and re-run this script.")
+        snapshot_download(repo_id=model_id, local_dir=model_dir)
+        # CustomVoice bundles the tokenizer under speech_tokenizer/.
+        for required in ("config.json", "model.safetensors", "speech_tokenizer/model.safetensors"):
+            if not os.path.isfile(os.path.join(model_dir, required)):
+                raise RuntimeError(f"Missing model file: {required}")
+        print("  OK")
+        return True
+    except Exception as exc:
+        print(f"  FAILED: {exc}")
         return False
-
-    got_one = False
-    for repo_id, out_dir in ((tokenizer_id, tokenizer_dir), (model_id, model_dir)):
-        try:
-            print(f"  downloading {repo_id} ...")
-            snapshot_download(repo_id=repo_id, local_dir=out_dir)
-            print(f"  OK: {repo_id} -> {out_dir}")
-            got_one = True
-        except Exception as e:
-            print(f"  FAILED: {repo_id}: {e}")
-
-    if not got_one:
-        print("  WARNING: Qwen3-TTS weights could not be downloaded. Check your "
-              "internet connection and re-run this script. main.py will refuse "
-              "to fall back to a female or robotic voice.")
-    return got_one
 
 
 def _resolve_whisper_device(cfg: dict) -> str:
@@ -127,27 +102,28 @@ def download_whisper_model():
     except ImportError as e:
         print(f"  FAILED: faster-whisper is not installed ({e}). "
               "Run `pip install faster-whisper` and re-run this script.")
-        return
+        return False
 
     try:
         print(f"  loading on device={device}, compute_type={compute_type} ...")
         WhisperModel("base.en", device=device, compute_type=compute_type)
         print("  OK")
+        return True
     except Exception as e:
         if device != "cpu":
             print(f"  GPU load failed ({e}); retrying on CPU...")
             try:
                 WhisperModel("base.en", device="cpu", compute_type="int8")
                 print("  OK (CPU)")
-                return
+                return True
             except Exception as e2:
                 print(f"  FAILED: {e2}")
-                return
+                return False
         print(f"  FAILED: {e}")
+        return False
 
 
 if __name__ == "__main__":
-    download_paddleocr_models()
-    download_qwen_tts_model()
-    download_whisper_model()
-    print("\nModel download step complete.")
+    results = [download_paddleocr_models(), download_qwen_tts_model(), download_whisper_model()]
+    print("\nModels ready." if all(results) else "\nModel setup incomplete; fix the errors above and retry.")
+    sys.exit(0 if all(results) else 1)

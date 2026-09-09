@@ -1,11 +1,10 @@
 {
   "fps": 60,
   "resolution": "1080x1920",
-  "music_volume": 0.10,
+  "music_volume": 0.1,
   "narration_volume": 1.0,
   "music_fade_in_sec": 1.5,
   "music_fade_out_sec": 2.0,
-  "voice_speed": 1.05,
   "voice": "male",
   "ocr_lang": "en",
   "paddleocr_use_gpu": false,
@@ -14,7 +13,6 @@
   "qwen_tts_model_dir": "models/qwen_tts",
   "qwen_tts_device": "auto",
   "qwen_tts_language": "English",
-  "qwen_tts_instruct": "Speak with high energy and genuine excitement, like you can't wait to tell someone this story -- quick, lively pacing, animated inflection, real enthusiasm and rising energy on the interesting parts, but still natural and conversational, never robotic or shouty.",
   "narration_mix_gain": 1.0,
   "whisper_device": "auto",
   "whisper_compute_type": "auto",
@@ -37,8 +35,8 @@
   "random_image": true,
   "line_padding_px": 14,
   "reveal_ease": "ease_out_quart",
-  "min_line_reveal_sec": 0.10,
-  "max_line_reveal_sec": 0.30,
+  "min_line_reveal_sec": 0.1,
+  "max_line_reveal_sec": 0.3,
   "video_codec": "libx264",
   "video_bitrate": "12M",
   "audio_codec": "aac",
@@ -48,5 +46,8 @@
   "output_dir": "output",
   "assets_dir": "assets",
   "models_dir": "models",
-  "log_level": "INFO"
+  "log_level": "INFO",
+  "ollama_url": "http://127.0.0.1:11434",
+  "ollama_model": "qwen2.5:7b-instruct-q4_K_M",
+  "ollama_timeout_sec": 180
 }

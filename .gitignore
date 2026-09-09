@@ -19,13 +19,6 @@ Thumbs.db
 # Models
 models/*
 !models/.gitkeep
-!models/piper
-!models/piper/
-!models/qwen_tts
-!models/qwen_tts/
-models/piper/*
-models/qwen_tts/*
-models/qwen_tts_tokenizer/
 
 # Downloaded model caches created outside models/
 .cache/

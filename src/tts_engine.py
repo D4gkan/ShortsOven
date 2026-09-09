@@ -1,37 +1,12 @@
-"""
-tts_engine.py
--------------
-Fully offline, natural-sounding narration using Qwen3-TTS 1.7B
-(Alibaba's local, open-weight neural TTS model, run via the `qwen_tts`
-package -- no cloud calls). Model weights are downloaded once by
-setup.bat / download_models.py and cached under
-`models/qwen_tts/` (path configurable via `qwen_tts_model_dir` in
-config.json).
+"""Local Qwen3-TTS CustomVoice narration with per-story delivery instructions.
 
-This module is an adapter: Qwen3-TTS replaced Piper as the backend,
-but the public interface used by the rest of the pipeline --
-`synthesize(text) -> wav_path` and `synthesize_lines(lines) -> [wav_path, ...]`
--- and the WAV-file-per-line output contract that alignment.py depends
-on are unchanged. get_wav_duration() also still works unmodified since
-it just reads WAV headers.
-
-Voice gender (male/female) is chosen by whatever answered start.bat's
-question -- start.bat exports it as the VOICE_GENDER environment
-variable before invoking main.py. `AppConfig.voice_gender`, if set
-explicitly, takes priority over the environment variable; the default
-is "male" if neither is present. If the configured voice preset fails
-to load, we automatically fall through the list of candidates for
-that gender in config.json ("qwen_male_voice_candidates" /
-"qwen_female_voice_candidates"). We never silently switch to the
-*other* gender or to a robotic system voice -- if every candidate for
-the requested gender fails, synthesis raises instead of guessing.
-
-The model is loaded once per process and cached at the class level so
-repeated AppConfig/engine construction (e.g. across pipeline runs in
-the same interpreter) never pays the load cost twice.
+The batch VOICE_GENDER setting overrides the config's default voice gender.
+Speaker presets are tried in order within that gender. Speech is generated
+as one continuous take by alignment.py; cache keys include delivery settings.
 """
 
 import hashlib
+import json
 import os
 import wave
 from typing import List
@@ -52,7 +27,7 @@ _DEFAULT_SAMPLE_RATE = 24000
 
 
 class QwenTTSEngine:
-    _MODEL_CACHE = {}  # model_dir -> loaded model, shared across instances/process
+    _MODEL_CACHE = {}  # model_dir -> loaded model, shared within this process
 
     def __init__(self, cfg: AppConfig):
         self.cfg = cfg
@@ -68,7 +43,7 @@ class QwenTTSEngine:
         from the user's M/F choice; default to "male" if neither is
         present. Anything other than "female" is treated as "male"."""
         gender = getattr(self.cfg, "voice_gender", None) or os.environ.get("VOICE_GENDER")
-        gender = (gender or "male").strip().lower()
+        gender = (gender or self.cfg.voice).strip().lower()
         return "female" if gender == "female" else "male"
 
     # ------------------------------------------------------------------
@@ -205,69 +180,14 @@ class QwenTTSEngine:
     # Generation (adapter over the qwen_tts model's actual call signature)
     # ------------------------------------------------------------------
     def _raw_generate(self, model, text: str, voice_name: str):
-        """Calls into the loaded Qwen3-TTS model. The current qwen-tts
-        package exposes custom-voice generation as
-        `model.generate_custom_voice(text=..., language=..., speaker=...)`,
-        returning `(wavs, sample_rate)` where `wavs` is a list of numpy
-        arrays (one per input string). We pass a single string, so we
-        return `(wavs[0], sample_rate)`.
-
-        A couple of older/alternate method names are tried as a
-        fallback in case the installed qwen-tts version differs, so
-        this adapter doesn't hard-break on a minor version bump."""
-        language = getattr(self.cfg, "qwen_tts_language", "English")
-        instruct = getattr(self.cfg, "qwen_tts_instruct", None)
-
-        if hasattr(model, "generate_custom_voice"):
-            gen_kwargs = dict(text=text, language=language, speaker=voice_name)
-            if instruct:
-                gen_kwargs["instruct"] = instruct
-            try:
-                wavs, sr = model.generate_custom_voice(**gen_kwargs)
-            except TypeError:
-                # Installed qwen-tts build predates the `instruct` kwarg --
-                # retry without it rather than hard-failing synthesis.
-                if "instruct" in gen_kwargs:
-                    log.warning("This qwen-tts build doesn't accept `instruct`; "
-                                "delivery style (calm/slow) can't be controlled "
-                                "-- consider upgrading qwen-tts.")
-                    gen_kwargs.pop("instruct")
-                    wavs, sr = model.generate_custom_voice(**gen_kwargs)
-                else:
-                    raise
-            return wavs[0], sr
-
-        # Fallbacks for other qwen-tts releases/model variants.
-        last_err = None
-        for method_name in ("generate", "synthesize", "tts", "infer"):
-            method = getattr(model, method_name, None)
-            if method is None:
-                continue
-            candidate_kwargs = []
-            if instruct:
-                candidate_kwargs.append(
-                    dict(text=text, language=language, speaker=voice_name, instruct=instruct)
-                )
-            candidate_kwargs += [
-                dict(text=text, language=language, speaker=voice_name),
-                dict(text=text, speaker=voice_name),
-                dict(text=text, voice=voice_name),
-            ]
-            for kwargs in candidate_kwargs:
-                try:
-                    return method(**kwargs)
-                except TypeError as e:
-                    last_err = e
-                    continue
-                except Exception as e:
-                    last_err = e
-                    break
-
-        raise TTSError(
-            "Could not find a supported generation method on the loaded "
-            f"Qwen3-TTS model (tried generate_custom_voice/generate/"
-            f"synthesize/tts/infer): {last_err}"
+        """Require instruction-capable CustomVoice; never discard story tone."""
+        if not hasattr(model, "generate_custom_voice"):
+            raise TTSError("This model does not support CustomVoice instructions. Run setup.bat with the configured Qwen3-TTS CustomVoice checkpoint.")
+        wavs, sr = model.generate_custom_voice(
+            text=text, language=self.cfg.qwen_tts_language,
+            speaker=voice_name, instruct=self.cfg.qwen_tts_instruct,
         )
+        return wavs[0], sr
 
     def _apply_speed(self, wav_path: str, speed: float):
         """Speeds up (or slows down) the narration WAV at `wav_path`
@@ -342,17 +262,18 @@ class QwenTTSEngine:
     # ------------------------------------------------------------------
     def _cache_path(self, text: str) -> str:
         speed = getattr(self.cfg, "voice_speed", 1.0) or 1.0
-        key = hashlib.sha256(
-            (self.get_voice() + "||" + text + f"||speed={speed:.3f}").encode()
-        ).hexdigest()[:16]
+        key = hashlib.sha256(json.dumps({
+            "version": 2, "voice": self.get_voice(), "text": text,
+            "speed": speed, "instruct": self.cfg.qwen_tts_instruct,
+            "language": self.cfg.qwen_tts_language,
+            "model_id": self.cfg.qwen_tts_model_id, "model_dir": self.model_dir,
+        }, sort_keys=True).encode("utf-8")).hexdigest()[:24]
         cache_dir = self.cfg.abspath(self.cfg.cache_dir)
         os.makedirs(cache_dir, exist_ok=True)
         return os.path.join(cache_dir, f"tts_{key}.wav")
 
     def synthesize(self, text: str) -> str:
-        """Synthesize `text` to a mono WAV file and return its path.
-        Cached by (voice, text) so unchanged narration is never
-        regenerated."""
+        """Synthesize text to WAV, cached by content, voice, model and delivery."""
         if not text or not text.strip():
             raise TTSError(
                 "Attempted to synthesize empty narration text. This should "
@@ -393,10 +314,7 @@ class QwenTTSEngine:
         return out_path
 
     def synthesize_lines(self, lines: List[TextLine]) -> List[str]:
-        """Synthesize each OCR line as its own short WAV clip AND
-        return their paths -- used by the concatenation step in
-        alignment.py so line boundaries are unambiguous even before
-        forced alignment refines exact timing."""
+        """Synthesize separate lines for callers that explicitly need clips."""
         log.info("Generating narration...")
         paths = []
         for line in lines:

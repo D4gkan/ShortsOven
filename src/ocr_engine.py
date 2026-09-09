@@ -58,9 +58,9 @@ class OCREngine:
     `_parse_predict_result` / `_parse_legacy_result`; everything else
     (grouping, caching, the TextLine shape) is unchanged from before."""
 
-    def __init__(self, cfg: AppConfig, languages=("en",)):
+    def __init__(self, cfg: AppConfig, languages=None):
         self.cfg = cfg
-        self.languages = list(languages)
+        self.languages = list(languages) if languages else [cfg.ocr_lang]
         self._reader = None  # lazy-loaded, offline model, reused across calls
 
     # ------------------------------------------------------------------
