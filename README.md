@@ -178,7 +178,7 @@ brief, not a runtime instruction file.
 ```
 
 Focused tests cover the tone API boundary, rejection paths, pipeline ordering,
-TTS instruction forwarding and cache separation. They do not download models.
+TTS instruction forwarding and cache separation. They dont download models.
 
 ```text
 main.py                     single-story pipeline
