@@ -405,12 +405,10 @@ could pick up as noise.
   at least one digit or an underscore (`_`).** No exceptions, no numeric-only,
   underscore-only, or clean plain-text names.
 - **Display names:** if there is a display name, it must include at least one
-  letter and at least one digit, with no underscore. Example: `moss9`,
-  `jarvis4`, `glow7` are valid. A display name with only digits or with an
+  letter and at least one digit, with no underscore. A display name with only digits or with an
   underscore is not allowed.
 - **Usernames:** usernames may include `@` only if they also contain at least
-  one letter and at least one digit or underscore in the name. Example:
-  `@moss9`, `@tide_4`, `@palm7` are valid. Plain names without letters or
+  one letter and at least one digit or underscore in the name. Plain names without letters or
   without digits/underscores are not allowed, and `@1234` or `@name` are not
   allowed.
 - **No engagement counts anywhere** — no likes, shares, saves, views, reposts,
