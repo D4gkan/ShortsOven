@@ -18,6 +18,13 @@ ShortsOven reads the screenshot, asks your local Ollama model how it should soun
 then generates a continuous Qwen3-TTS narration. The screenshot reveals from top to
 bottom over background footage, with music mixed underneath.
 
+## License
+
+ShortsOven is provided under the [ShortsOven Non-Redistribution License](LICENSE).
+You may inspect and modify the code for private local use, but you may not
+redistribute, publish, share, sell, sublicense, or present the project or a
+modified version as your own without prior written permission.
+
 ## What happens for each story
 
 1. **Read:** PaddleOCR extracts text lines and their positions.
