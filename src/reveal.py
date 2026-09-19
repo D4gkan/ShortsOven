@@ -1,156 +1,188 @@
-"""
-reveal.py
----------
-Builds the top->bottom "clipping mask" reveal animation, driven
-entirely by narration timing (never by a constant speed, never
-sideways, never a fade/wipe).
+"""Narration-triggered conversation chunks with one shared scrolling offset."""
 
-For every OCR line i:
-  - The chunk reveals in the short gap RIGHT AFTER the previous
-    line's last word finishes and RIGHT BEFORE this line's first
-    word is spoken -- a quick "snap", capped between
-    `min_line_reveal_sec` and `max_line_reveal_sec` (config.json),
-    using an eased curve so it still feels smooth rather than an
-    instant cut.
-  - While line i is actually being spoken, the mask holds perfectly
-    still at that line's target so the viewer can read it while
-    listening ("no movement" while narrated, per spec).
-
-The mask is rendered as a black/white video the same size as the
-*displayed* screenshot: white = revealed (show image), black =
-hidden (show background through). This mask is later combined with
-the image and background in renderer.py via ffmpeg's `alphamerge` +
-`overlay`, so the screenshot image itself is never cropped or
-re-encoded at reduced quality -- only the mask moves.
-"""
-
+import math
 import os
 from dataclasses import dataclass
-from typing import List
 
-import cv2
 import numpy as np
+from PIL import Image
 
-from .alignment import LineTiming
-from .config import AppConfig
+from .exceptions import RenderError
 from .logger_setup import get_logger
-from .ocr_engine import TextLine
 
 log = get_logger(__name__)
 
 
-def _ease_in_out_cubic(t: float) -> float:
-    """Smooth accelerate -> decelerate -> stop-precisely curve.
-    t in [0, 1] -> eased value in [0, 1]."""
+def smoothstep(t):
     t = max(0.0, min(1.0, t))
-    if t < 0.5:
-        return 4 * t * t * t
-    p = -2 * t + 2
-    return 1 - (p ** 3) / 2
+    return t * t * (3.0 - 2.0 * t)
 
 
-def _ease_out_quart(t: float) -> float:
-    """Snappier curve: fires fast immediately, decelerates hard into
-    the stop. Feels more like a quick "snap" than the smoother
-    in-out curve above -- better suited to the very short reveal
-    window used now."""
-    t = max(0.0, min(1.0, t))
-    return 1 - (1 - t) ** 4
-
-
-EASING_FUNCS = {
-    "ease_out_cubic": _ease_out_quart,
-    "ease_in_out_cubic": _ease_in_out_cubic,
-    "ease_out_quart": _ease_out_quart,
-}
+@dataclass
+class ConversationChunk:
+    line_indices: tuple
+    crop_top: int
+    crop_bottom: int
+    height: int
+    stack_top: float
+    start_sec: float
+    end_sec: float
+    transition_start: float = 0.0
+    transition_duration: float = 0.0
+    shift: float = 0.0
 
 
 @dataclass
 class RevealPlan:
-    total_frames: int
     display_width: int
-    display_height: int
-    heights: np.ndarray  # per-frame revealed height in displayed-image pixels
+    chunks: list
+    initial_y: float
+    gap: int
+    feather: int
+
+    def offset_at(self, seconds):
+        return self.initial_y - sum(
+            c.shift * smoothstep((seconds - c.transition_start) / c.transition_duration)
+            for c in self.chunks[1:] if c.transition_duration > 0
+        )
+
+    def offset_expression(self):
+        # All chunks use the identical expression: spacing cannot change mid-slide.
+        terms = [f"{self.initial_y:.6f}"]
+        for c in self.chunks[1:]:
+            u = f"clip((t-{c.transition_start:.6f})/{c.transition_duration:.6f},0,1)"
+            terms.append(f"-{c.shift:.6f}*({u})*({u})*(3-2*({u}))")
+        return "".join(terms)
 
 
 class RevealBuilder:
-    def __init__(self, cfg: AppConfig):
+    def __init__(self, cfg):
         self.cfg = cfg
-        self.ease = EASING_FUNCS.get(cfg.reveal_ease, _ease_in_out_cubic)
 
-    def build_plan(self, lines: List[TextLine], timings: List[LineTiming],
-                    orig_image_size, display_size) -> RevealPlan:
-        log.info("Building reveal animation...")
-        orig_w, orig_h = orig_image_size
-        disp_w, disp_h = display_size
-        scale = disp_h / float(orig_h)
+    def build_plan(self, lines, timings, orig_image_size, display_size, visual_lines=None):
+        if not lines or len(lines) != len(timings):
+            raise RenderError("Conversation chunks require matching OCR lines and speech timings.")
+        if any(line.index != timing.index for line, timing in zip(lines, timings)):
+            raise RenderError("OCR lines and narration timing indices do not match.")
+        max_lines = self.cfg.conversation_chunk_lines
+        if not isinstance(max_lines, int) or not 1 <= max_lines <= 8:
+            raise RenderError("conversation_chunk_lines must be an integer from 1 to 8.")
+        if not 0.1 <= self.cfg.conversation_slide_sec <= 1.0:
+            raise RenderError("conversation_slide_sec must be between 0.1 and 1 second.")
+        if not 0.3 <= self.cfg.conversation_anchor_y <= 0.7:
+            raise RenderError("conversation_anchor_y must be between 0.3 and 0.7.")
+        if not 0 <= self.cfg.conversation_gap_px <= 80 or not 0 <= self.cfg.conversation_feather_px <= 40:
+            raise RenderError("Conversation spacing or feather width is out of range.")
+        ow, oh = orig_image_size
+        width = display_size[0]
+        scale = width / ow
+        # Split at paragraph gaps or sentence ends, with a small maximum chunk size.
+        groups = []
+        current = []
+        for i, line in enumerate(lines):
+            if current:
+                prev = lines[current[-1]]
+                gap = line.y - (prev.y + prev.height)
+                if gap > max(prev.height, line.height) * 1.2:
+                    groups.append(current)
+                    current = []
+            current.append(i)
+            if len(current) >= max_lines or line.text.rstrip().endswith((".", "!", "?")):
+                groups.append(current)
+                current = []
+        if current:
+            groups.append(current)
 
-        pad = self.cfg.line_padding_px
-        # Reveal target for each line = bottom edge of that line's
-        # bounding box (plus a little padding so text isn't clipped),
-        # converted into displayed-image pixel space.
-        targets = []
-        for line in lines:
-            bottom = min(orig_h, line.y + line.height + pad)
-            targets.append(bottom * scale)
+        # Narration defines WHEN to reveal; it must never decide WHICH pixels
+        # survive. Partition the entire screenshot into contiguous strips.
+        # Keep intervening usernames/media with the next narrated line, and
+        # include the footer/trailing picture in the final strip.
+        visual_lines = lines if visual_lines is None else visual_lines
+        boundaries = [0]
+        for group in groups[:-1]:
+            last = lines[group[-1]]
+            text_bottom = last.y + last.height
+            following_y = min((line.y for line in visual_lines if line.y >= text_bottom),
+                              default=oh)
+            padding = min(self.cfg.line_padding_px, max(0, (following_y - text_bottom) // 2))
+            boundary = min(oh, text_bottom + padding)
+            if boundary <= boundaries[-1]:
+                raise RenderError("Overlapping OCR bounds cannot form ordered conversation sections.")
+            boundaries.append(boundary)
+        boundaries.append(oh)
 
-        total_frames = int(round(timings[-1].end_frame)) + 1
-        heights = np.zeros(total_frames, dtype=np.float32)
+        chunks = []
+        stack_top = 0
+        for group_index, group in enumerate(groups):
+            first, last = group[0], group[-1]
+            top, bottom = boundaries[group_index:group_index + 2]
+            if bottom <= top:
+                raise RenderError("Invalid OCR crop bounds for a conversation chunk.")
+            height = max(1, round(bottom * scale) - round(top * scale))
+            start = max(0.0, timings[first].start_sec)
+            end = max(start, timings[last].end_sec)
+            chunk = ConversationChunk(tuple(lines[i].index for i in group), top, bottom,
+                                      height, stack_top, start, end)
+            chunks.append(chunk)
+            stack_top += height + self.cfg.conversation_gap_px
 
-        min_frames = max(1, int(self.cfg.min_line_reveal_sec * self.cfg.fps))
-        max_frames = max(min_frames, int(self.cfg.max_line_reveal_sec * self.cfg.fps))
+        for i, chunk in enumerate(chunks[1:], 1):
+            prev = chunks[i - 1]
+            # Prefer the gap before speech. Without a gap, use only the short
+            # introduction of the new chunk, never a continuous scroll.
+            start = max(prev.end_sec, chunk.start_sec - self.cfg.conversation_slide_sec)
+            start = min(start, chunk.start_sec)
+            if i > 1:
+                start = max(start, prev.transition_start + prev.transition_duration)
+            next_start = chunks[i + 1].start_sec if i + 1 < len(chunks) else chunk.end_sec
+            room = max(1 / self.cfg.fps, next_start - start)
+            chunk.transition_start = start
+            chunk.transition_duration = min(self.cfg.conversation_slide_sec, room)
+            # Make room only for the newly appended section. Re-centering by
+            # averaging both heights makes a short line after a photo jump.
+            chunk.shift = chunk.height + self.cfg.conversation_gap_px
 
-        prev_target = 0.0
-        prev_end_frame = 0
-        for line, timing, target in zip(lines, timings, targets):
-            # The chunk reveals in the gap RIGHT AFTER the previous
-            # line's last word and RIGHT BEFORE this line's first word
-            # -- not while this line is being spoken. This keeps the
-            # motion a quick "snap" instead of a slow multi-second
-            # crawl, and lets the viewer read the line while it's
-            # narrated instead of watching it still animate.
-            reveal_start = prev_end_frame
-            available = max(1, timing.start_frame - reveal_start)
-            reveal_span = min(max_frames, max(min_frames, available))
-            reveal_end = min(reveal_start + reveal_span, total_frames)
+        plan = RevealPlan(width, chunks,
+                          self.cfg.height * self.cfg.conversation_anchor_y - chunks[0].height / 2,
+                          self.cfg.conversation_gap_px, self.cfg.conversation_feather_px)
+        log.info("Building conversation feed: %s chunks; movements follow narration boundaries.", len(chunks))
+        return plan
 
-            for f in range(reveal_start, reveal_end):
-                t = (f - reveal_start) / reveal_span
-                eased = self.ease(t)
-                heights[f] = prev_target + (target - prev_target) * eased
-
-            # Hold perfectly still for the rest of the gap (if any) and
-            # for the entire time this line is being spoken.
-            hold_end = max(reveal_end, timing.end_frame)
-            if reveal_end < total_frames:
-                heights[reveal_end:min(hold_end, total_frames)] = target
-
-            prev_target = target
-            prev_end_frame = max(timing.end_frame, reveal_end)
-
-        # tail: keep final line's revealed height for any remaining frames
-        if prev_end_frame < total_frames:
-            heights[prev_end_frame:total_frames] = prev_target
-
-        heights = np.clip(heights, 0, disp_h)
-        return RevealPlan(total_frames=total_frames, display_width=disp_w,
-                           display_height=disp_h, heights=heights)
-
-    def render_mask_video(self, plan: RevealPlan, out_path: str) -> str:
-        """Writes a black/white mask video: white rectangle from y=0
-        to y=revealed_height(frame), black elsewhere. Dimensions MUST
-        exactly match the image's display size to avoid alphamerge
-        frame-size mismatches in ffmpeg."""
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-        writer = cv2.VideoWriter(out_path, fourcc, self.cfg.fps,
-                                  (plan.display_width, plan.display_height), isColor=False)
-        try:
-            for f in range(plan.total_frames):
-                h = int(plan.heights[f])
-                frame = np.zeros((plan.display_height, plan.display_width), dtype=np.uint8)
-                if h > 0:
-                    frame[0:h, :] = 255
-                writer.write(frame)
-        finally:
-            writer.release()
-        return out_path
+    def export_chunks(self, image_path, plan, output_dir, lines):
+        """Crop and scale once. Feather alpha only; never blur screenshot RGB."""
+        os.makedirs(output_dir, exist_ok=True)
+        paths = []
+        with Image.open(image_path) as source:
+            source = source.convert("RGB")
+            scale = plan.display_width / source.width
+            for i, chunk in enumerate(plan.chunks):
+                crop = source.crop((0, chunk.crop_top, source.width, chunk.crop_bottom))
+                crop = crop.resize((plan.display_width, chunk.height), Image.Resampling.LANCZOS).convert("RGBA")
+                y, x = np.ogrid[:chunk.height, :plan.display_width]
+                # Touching chunks must not expose the background at their seams.
+                # Keep side feathering, plus the top/bottom of the overall stack.
+                distance = np.broadcast_to(np.minimum(x, plan.display_width - 1 - x),
+                                           (chunk.height, plan.display_width)).copy()
+                if plan.gap > 0 or i == 0:
+                    distance = np.minimum(distance, y)
+                if plan.gap > 0 or i == len(plan.chunks) - 1:
+                    distance = np.minimum(distance, chunk.height - 1 - y)
+                if plan.feather:
+                    alpha = np.clip(distance / plan.feather, 0, 1)
+                    alpha = (255 * alpha * alpha * (3 - 2 * alpha)).astype(np.uint8)
+                else:
+                    alpha = np.full((chunk.height, plan.display_width), 255, dtype=np.uint8)
+                # Text boxes remain fully opaque even when OCR finds text near an edge.
+                for line in lines:
+                    if line.y >= chunk.crop_bottom or line.y + line.height <= chunk.crop_top:
+                        continue
+                    left = max(0, math.floor(line.x * scale) - 2)
+                    right = min(plan.display_width, math.ceil((line.x + line.width) * scale) + 2)
+                    top = max(0, math.floor((line.y - chunk.crop_top) * scale) - 2)
+                    bottom = min(chunk.height, math.ceil((line.y + line.height - chunk.crop_top) * scale) + 2)
+                    alpha[top:bottom, left:right] = 255
+                crop.putalpha(Image.fromarray(alpha))
+                path = os.path.abspath(os.path.join(output_dir, f"chunk_{i:04d}.png"))
+                crop.save(path)
+                paths.append(path)
+        return paths

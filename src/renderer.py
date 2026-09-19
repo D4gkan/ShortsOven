@@ -1,30 +1,10 @@
-"""
-renderer.py
------------
-Final compositing pass. Prefers raw ffmpeg filters over MoviePy for
-speed. Pipeline:
-
-  1. Screenshot is scaled (never cropped/re-encoded lossily) to its
-     fixed on-screen display size and looped as a static video for
-     the narration's duration.
-  2. The reveal mask video (from reveal.py) is merged into that
-     image's alpha channel with `alphamerge` -- this is the "moving
-     clipping mask", the image pixels themselves never change.
-  3. The now-transparent-where-hidden image is `overlay`'d onto the
-     prepared background video at a FIXED centered position (the
-     image itself never moves, scales, or shakes -- only the mask
-     reveals more of it over time).
-  4. Narration + music are mixed: music is volume-reduced to
-     `music_volume` (default 10%) with fade in/out, narration stays
-     at full, clear volume.
-  5. Output is encoded to H.264/AAC at the configured resolution/fps.
-"""
+"""Composite feathered conversation crops as a narration-triggered vertical feed."""
 
 import os
 import shutil
-import subprocess
 
 from .config import AppConfig
+from .ffmpeg_runner import run_ffmpeg
 from .exceptions import FFmpegNotFoundError, RenderError
 from .logger_setup import get_logger
 
@@ -44,61 +24,63 @@ class Renderer:
     def __init__(self, cfg: AppConfig):
         self.cfg = cfg
 
-    def render(self, background_path: str, image_path: str, mask_path: str,
+    def render(self, background_path: str, chunk_paths: list, plan,
                narration_path: str, music_path: str, duration_sec: float,
-               display_w: int, display_h: int, out_path: str) -> str:
+               out_path: str) -> str:
         _require_ffmpeg()
-        for label, path in (("background", background_path), ("screenshot", image_path),
-                            ("reveal mask", mask_path), ("narration", narration_path),
-                            ("music", music_path)):
+        inputs = [("background", background_path), ("narration", narration_path),
+                  ("music", music_path)] + [("conversation chunk", p) for p in chunk_paths]
+        if not chunk_paths or len(chunk_paths) != len(plan.chunks):
+            raise RenderError("Missing conversation chunks for the animation plan.")
+        for label, path in inputs:
             if not os.path.isfile(path):
                 raise RenderError(f"Missing {label} input: {path}")
-        log.info("Rendering video...")
-
-        w, h = self.cfg.width, self.cfg.height
+        log.info("Rendering conversation feed...")
         fade_in = self.cfg.music_fade_in_sec
         fade_out = self.cfg.music_fade_out_sec
         fade_out_start = max(0.0, duration_sec - fade_out)
-
         bg_filters = "format=yuv420p"
-        if self.cfg.background_blur and self.cfg.background_blur > 0:
+        if self.cfg.background_blur > 0:
             bg_filters = f"boxblur={self.cfg.background_blur}:1,{bg_filters}"
-
-        filter_complex = (
-            f"[0:v]{bg_filters}[bg];"
-            f"[1:v]scale={display_w}:{display_h}[imgscaled];"
-            f"[imgscaled][2:v]alphamerge[imgalpha];"
-            f"[bg][imgalpha]overlay=x=(W-w)/2:y=(H-h)/2:shortest=1,"
-            f"format=yuv420p[vout];"
-            f"[4:a]volume={self.cfg.music_volume},"
-            f"afade=t=in:st=0:d={fade_in},"
-            f"afade=t=out:st={fade_out_start:.3f}:d={fade_out}[music];"
-            f"[3:a]volume={getattr(self.cfg, 'narration_volume', 1.0)}[narr];"
+        filters = [f"[0:v]{bg_filters}[base0]"]
+        offset = plan.offset_expression()
+        cmd = ["ffmpeg", "-nostdin", "-y", "-filter_complex_threads", "1", "-i", background_path,
+               "-i", narration_path, "-stream_loop", "-1", "-t", str(duration_sec), "-i", music_path]
+        for i, (path, chunk) in enumerate(zip(chunk_paths, plan.chunks)):
+            cmd += ["-loop", "1", "-framerate", str(self.cfg.fps), "-t", str(duration_sec), "-i", path]
+            pixel_filter = "format=rgba"
+            if i:
+                # Opacity is only an introduction accent; all visible crops move
+                # together using the same stack offset throughout the slide.
+                pixel_filter += (f",fade=t=in:st={chunk.transition_start:.6f}:"
+                                 f"d={chunk.transition_duration:.6f}:alpha=1")
+            filters.append(f"[{i + 3}:v]{pixel_filter}[chunk{i}]")
+            start = chunk.transition_start if i else 0
+            filters.append(
+                f"[base{i}][chunk{i}]overlay=x=(W-w)/2:"
+                f"y='{chunk.stack_top:.6f}+({offset})':"
+                f"enable='gte(t,{start:.6f})':eval=frame:"
+                f"eof_action=repeat:format=auto[base{i + 1}]"
+            )
+        filters += [
+            f"[base{len(chunk_paths)}]format=yuv420p[vout]",
+            f"[2:a]volume={self.cfg.music_volume},afade=t=in:st=0:d={fade_in},"
+            f"afade=t=out:st={fade_out_start:.3f}:d={fade_out}[music]",
+            f"[1:a]volume={self.cfg.narration_volume},apad=whole_dur={duration_sec},atrim=duration={duration_sec}[narr]",
             f"[narr][music]amix=inputs=2:duration=first:dropout_transition=3,"
-            f"volume={getattr(self.cfg, 'narration_mix_gain', 1.0)}[aout]"
-        )
-
-        video_codec_args = self._video_codec_args()
-
-        cmd = [
-            "ffmpeg", "-y",
-            "-i", background_path,
-            "-loop", "1", "-t", f"{duration_sec:.3f}", "-i", image_path,
-            "-i", mask_path,
-            "-i", narration_path,
-            "-stream_loop", "-1", "-i", music_path,
-            "-filter_complex", filter_complex,
-            "-map", "[vout]", "-map", "[aout]",
-            "-t", f"{duration_sec:.3f}",
-            "-r", str(self.cfg.fps),
-            *video_codec_args,
-            "-c:a", self.cfg.audio_codec, "-b:a", self.cfg.audio_bitrate,
-            "-pix_fmt", "yuv420p",
-            "-movflags", "+faststart",
-            out_path,
+            f"volume={self.cfg.narration_mix_gain}[aout]",
         ]
+        # A file avoids Windows command-length limits on longer conversations.
+        script_path = self.cfg.abspath(os.path.join(self.cfg.cache_dir, "conversation_filters.txt"))
+        with open(script_path, "w", encoding="utf-8") as f:
+            f.write(";\n".join(filters))
+        cmd += ["-filter_complex_script", script_path,
+                "-map", "[vout]", "-map", "[aout]", "-t", f"{duration_sec:.3f}",
+                "-r", str(self.cfg.fps), *self._video_codec_args(),
+                "-c:a", self.cfg.audio_codec, "-b:a", self.cfg.audio_bitrate,
+                "-pix_fmt", "yuv420p", "-movflags", "+faststart", out_path]
 
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        result = run_ffmpeg(cmd, self.cfg, duration_sec)
         if result.returncode != 0:
             # Retry once with a software encoder if hardware encoding failed.
             if self.cfg.use_hardware_acceleration:
@@ -108,7 +90,7 @@ class Renderer:
                 idx = cmd_sw.index("-c:v")
                 cmd_sw[idx + 1] = "libx264"
                 cmd_sw[cmd_sw.index("-preset") + 1] = "medium"
-                result = subprocess.run(cmd_sw, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                result = run_ffmpeg(cmd_sw, self.cfg, duration_sec)
 
             if result.returncode != 0:
                 raise RenderError(

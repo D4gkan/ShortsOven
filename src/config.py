@@ -77,9 +77,11 @@ class AppConfig:
     background_reuse_decay: float = 0.5
     music_reuse_decay: float = 0.5
     line_padding_px: int = 14
-    reveal_ease: str = "ease_out_quart"
-    min_line_reveal_sec: float = 0.10
-    max_line_reveal_sec: float = 0.30
+    conversation_chunk_lines: int = 1
+    conversation_slide_sec: float = 0.32
+    conversation_anchor_y: float = 0.56
+    conversation_gap_px: int = 0
+    conversation_feather_px: int = 10
     video_codec: str = "libx264"
     video_bitrate: str = "12M"
     audio_codec: str = "aac"
@@ -91,6 +93,8 @@ class AppConfig:
     # no extra boost.
     narration_mix_gain: float = 1.0
     use_hardware_acceleration: bool = True
+    render_stall_timeout_sec: float = 120
+    render_timeout_sec: float = 900
     cache_dir: str = "cache"
     output_dir: str = "output"
     assets_dir: str = "assets"

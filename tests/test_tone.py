@@ -89,6 +89,7 @@ class ToneTests(unittest.TestCase):
         events = []
         cfg = AppConfig()
         lines = [SimpleNamespace(text="Cleaned story.")]
+        visual_lines = [SimpleNamespace(text="@username_1"), *lines]
         tone = validate_tone(VALID)
         with patch.object(main, "parse_args", return_value=SimpleNamespace(image=None)), \
              patch.object(main, "load_config", return_value=cfg), \
@@ -99,9 +100,9 @@ class ToneTests(unittest.TestCase):
              patch.object(main, "ToneEngine") as engine, \
              patch.object(main, "QwenTTSEngine") as tts, \
              patch.object(main, "AlignmentEngine") as aligner, \
-             patch.object(main, "RevealBuilder"), patch.object(main, "Renderer") as renderer:
+             patch.object(main, "RevealBuilder") as reveal, patch.object(main, "Renderer") as renderer:
             image.return_value.__enter__.return_value.size = (600, 800)
-            ocr.return_value.detect_lines.side_effect = lambda _: events.append("ocr") or lines
+            ocr.return_value.detect_lines.side_effect = lambda _: events.append("ocr") or visual_lines
             engine.return_value.analyze.side_effect = lambda _: events.append("tone") or tone
             tts.side_effect = lambda c: events.append("tts") or Mock()
             aligner.return_value.build_narration.return_value = [SimpleNamespace(end_sec=1)]
@@ -111,7 +112,11 @@ class ToneTests(unittest.TestCase):
             self.assertTrue(working_image.endswith("source_image.png"))
             image.return_value.__enter__.return_value.convert.return_value.save.assert_called_once_with(
                 working_image, format="PNG")
-            self.assertEqual(renderer.return_value.render.call_args.kwargs["image_path"], working_image)
+            self.assertEqual(reveal.return_value.export_chunks.call_args.args[0], working_image)
+            self.assertIs(reveal.return_value.export_chunks.call_args.args[-1], visual_lines)
+            self.assertIs(reveal.return_value.build_plan.call_args.kwargs["visual_lines"], visual_lines)
+            self.assertEqual(renderer.return_value.render.call_args.kwargs["chunk_paths"],
+                             reveal.return_value.export_chunks.return_value)
             engine.return_value.analyze.assert_called_once_with("Cleaned story.")
             self.assertEqual(tts.call_args.args[0].qwen_tts_instruct, VALID["instruct"])
             engine.return_value.analyze.side_effect = ToneError("Unavailable")

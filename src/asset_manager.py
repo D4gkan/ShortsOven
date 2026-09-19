@@ -34,6 +34,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from .config import AppConfig
+from .ffmpeg_runner import run_ffmpeg
 from .exceptions import AssetError
 from .logger_setup import get_logger
 
@@ -267,7 +268,7 @@ class AssetManager:
                  f"({len(clip_paths)} clip(s), scale/crop to fill)...")
         for p in clip_paths:
             log.info(f"  - {os.path.basename(p)}")
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        result = run_ffmpeg(cmd, self.cfg, target_duration)
         if result.returncode != 0:
             # Same retry-with-software-encoder fallback as renderer.py:
             # a hardware encoder can fail on some machines/drivers even
@@ -279,7 +280,7 @@ class AssetManager:
                 idx = cmd_sw.index("-c:v")
                 cmd_sw[idx + 1] = "libx264"
                 cmd_sw[cmd_sw.index("-preset") + 1] = "medium"
-                result = subprocess.run(cmd_sw, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                result = run_ffmpeg(cmd_sw, self.cfg, target_duration)
 
             if result.returncode != 0:
                 raise AssetError(

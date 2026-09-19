@@ -27,16 +27,7 @@ TAIL_SILENCE_SEC = 0.8  # brief hold at the end after the last line finishes
 
 
 def compute_display_size(orig_w: int, orig_h: int, canvas_w: int, canvas_h: int):
-    """Screenshot is scaled (never cropped) to fit within ~88% of the
-    canvas width while preserving its aspect ratio, then centered.
-
-    Both dimensions are forced to be even numbers. Video codecs (the
-    mp4v writer used for the mask, and libx264/yuv420p for the final
-    render) require even width/height and will silently round an odd
-    value down internally -- if we didn't force evenness here, the
-    mask video and the ffmpeg `scale` filter (which has no such
-    constraint) could end up 1px apart and fail alphamerge.
-    """
+    """Scale conversation width consistently; height never shrinks to fit."""
     target_w = int(canvas_w * 0.88)
     target_h = int(round(target_w * orig_h / orig_w))
     if target_w % 2:
@@ -76,8 +67,8 @@ def run():
             im.convert("RGB").save(working_image, format="PNG")
 
         ocr = OCREngine(cfg)
-        lines = ocr.detect_lines(working_image)
-        lines = clean_lines(lines)
+        visual_lines = ocr.detect_lines(working_image)
+        lines = clean_lines(visual_lines)
 
         story = " ".join(line.text.strip() for line in lines if line.text.strip())
         cfg = ToneEngine(cfg).analyze(story).apply(cfg)
@@ -95,22 +86,22 @@ def run():
         display_w, display_h = compute_display_size(orig_w, orig_h, cfg.width, cfg.height)
 
         reveal = RevealBuilder(cfg)
-        plan = reveal.build_plan(lines, timings, (orig_w, orig_h), (display_w, display_h))
-        mask_path = cfg.abspath(os.path.join(cfg.cache_dir, "reveal_mask.mp4"))
-        reveal.render_mask_video(plan, mask_path)
+        plan = reveal.build_plan(lines, timings, (orig_w, orig_h), (display_w, display_h),
+                                 visual_lines=visual_lines)
+        chunk_paths = reveal.export_chunks(
+            working_image, plan, cfg.abspath(os.path.join(cfg.cache_dir, "conversation")), visual_lines
+        )
 
         renderer = Renderer(cfg)
         out_name = f"reddit_story_{int(time.time())}.mp4"
         out_path = cfg.abspath(os.path.join(cfg.output_dir, out_name))
         renderer.render(
             background_path=prepared_bg_path,
-            image_path=working_image,
-            mask_path=mask_path,
+            chunk_paths=chunk_paths,
+            plan=plan,
             narration_path=narration_path,
             music_path=selected.music_path,
             duration_sec=duration_sec,
-            display_w=display_w,
-            display_h=display_h,
             out_path=out_path,
         )
 

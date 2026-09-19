@@ -15,8 +15,9 @@
 
 Turn story screenshots into vertical videos with narration that fits the situation.
 ShortsOven reads the screenshot, asks your local Ollama model how it should sound,
-then generates a continuous Qwen3-TTS narration. The screenshot reveals from top to
-bottom over background footage, with music mixed underneath.
+then generates a continuous Qwen3-TTS narration. Cropped conversation sections
+build into a connected upward-moving feed over background footage, with music
+mixed underneath.
 
 ## License
 
@@ -28,7 +29,8 @@ modified version as your own without prior written permission.
 ## What happens for each story
 
 1. **Read:** PaddleOCR extracts text lines and their positions.
-2. **Clean:** remove username-like tokens and correct common spelling errors.
+2. **Clean narration:** remove username-like tokens and correct common spelling
+   errors in the spoken text. Original screenshot content stays intact visually.
 3. **Choose delivery:** Ollama receives the complete cleaned story and returns a
    tone, a natural-language delivery instruction, and a speed multiplier.
 4. **Speak:** Qwen3-TTS reads that same text in one continuous take using the
@@ -36,8 +38,11 @@ modified version as your own without prior written permission.
 5. **Synchronize:** faster-whisper transcribes the audio with word timestamps;
    fuzzy matching maps those words back to screenshot lines. Unmatched lines
    use a logged timing fallback, so alignment is best-effort rather than exact.
-6. **Render:** FFmpeg combines narration, music, background clips and the reveal
-   animation. Default output is 1080 × 1920, 60 fps, H.264/AAC.
+6. **Render:** nearby OCR lines form short cropped sections. The first appears
+   near screen center. Each new section joins below and pushes the whole stack
+   upward with smooth easing; the stack holds still between additions. Old
+   sections leave through the top without shrinking. FFmpeg combines the feed,
+   narration, music and background at 1080 × 1920, 60 fps, H.264/AAC by default.
 
 Sad stories can receive a restrained, compassionate delivery; jokes can be dry
 and playful; suspense can build gradually. Ollama provides one configuration for
@@ -113,7 +118,46 @@ Ollama is a separate application, not a Python requirement. With the default
 loopback address and downloaded local models, story processing stays on your PC.
 Changing the URL to another machine sends the cleaned story there.
 
-### Other configuration
+### Conversation animation
+
+Story text is narrated, beginning with the opening section positioned near
+screen center. Each addition includes one narrated OCR line by default. Visual
+sections form contiguous strips covering the entire original screenshot: usernames,
+headers, embedded pictures, whitespace and footers are retained. Unspoken content
+between narrated lines appears with the following line; trailing content appears
+with the final line. Filtering a username from speech never removes its pixels.
+The optional larger chunk size also splits at sentence endings and paragraph gaps. Each section preserves the screenshot's proportions
+at a consistent width, with no scaling down as the conversation grows.
+
+Movement happens only when a section is added. All visible sections share the
+same smoothly eased vertical offset, with sections touching and no added gap. Each addition moves the stack by exactly the new section height plus configured
+spacing. The bottom of the feed stays anchored near the initial section; older sections
+travel off the top. When there is a speech gap, the slide uses it. With continuous
+speech, the slide occupies just the short introduction of the next section, then
+stops. This is not an automatic scrolling animation.
+
+Only the outer alpha boundary is feathered; touching section boundaries stay opaque. Screenshot pixels are not blurred,
+and detected text areas remain fully opaque. A working image copy supplies both
+OCR and crops, so moving the original during generation cannot break the render.
+
+| Setting | Default | Purpose |
+|---|---|---|
+| `conversation_chunk_lines` | `1` | OCR lines per addition: one line at a time by default (1–8) |
+| `conversation_slide_sec` | `0.32` | Eased addition duration in seconds (0.1–1) |
+| `conversation_anchor_y` | `0.56` | First section's center, as a fraction of screen height |
+| `conversation_gap_px` | `0` | Added spacing between sections; 0 joins them without gaps |
+| `conversation_feather_px` | `10` | Outer opacity feather width, in output pixels; 0 disables |
+| `line_padding_px` | `14` | Preferred cut spacing after a narrated line; all intervening pixels remain in the next section |
+
+The old line-mask easing and reveal-duration settings are no longer used.
+
+Rendering uses finite input durations and a single filter-processing thread to
+avoid stalled multi-input filter graphs. Encoding progress is logged every five
+seconds. `render_stall_timeout_sec` defaults to 120 seconds without output-time
+progress; `render_timeout_sec` caps each encoding attempt at 900 seconds. A failed
+hardware attempt retries once in software. Failed-job cache files are retained.
+
+## Other configuration
 
 | Setting | Purpose |
 |---|---|
@@ -140,8 +184,8 @@ may be absolute or project-relative. The batch launcher uses `assets/images/`,
 hashtag filename, and **deletes its source screenshot after successful output
 verification and renaming**. Keep copies of screenshots you want to retain.
 The batch stops on failure and keeps the failed screenshot. Escape during the
-timer stops the Python worker. The batch clears intermediate cache files after
-each completed attempt.
+timer stops the Python worker. The batch clears intermediate cache files after successful jobs and retains them
+after failures for diagnosis and recovery. Encoding progress appears beside the timer.
 
 **Single video, retaining the source:**
 
@@ -161,8 +205,8 @@ Omit `--image` to select a random screenshot from `assets/images/`. Results go t
 - Ollama manages its own model storage outside this project.
 - `cache/` holds OCR results, speech and intermediate video files. OCR is keyed
   by image contents. Speech caching includes text, speaker, tone instruction,
-  speed, language and model identity. Single runs retain the cache; batch runs
-  clear it, including background/music selection history.
+  speed, language and model identity. Single runs retain the cache; successful batch jobs
+  clear it, including background/music selection history. Failed jobs retain it.
 - `output/` holds finished videos; `logs/` holds batch diagnostics.
 
 Keep media, model weights, environments and generated artifacts out of Git;

@@ -34,9 +34,6 @@
   "random_music": true,
   "random_image": true,
   "line_padding_px": 14,
-  "reveal_ease": "ease_out_quart",
-  "min_line_reveal_sec": 0.1,
-  "max_line_reveal_sec": 0.3,
   "video_codec": "libx264",
   "video_bitrate": "12M",
   "audio_codec": "aac",
@@ -49,5 +46,12 @@
   "log_level": "INFO",
   "ollama_url": "http://127.0.0.1:11434",
   "ollama_model": "qwen2.5:7b-instruct-q4_K_M",
-  "ollama_timeout_sec": 180
+  "ollama_timeout_sec": 180,
+  "conversation_chunk_lines": 1,
+  "conversation_slide_sec": 0.32,
+  "conversation_anchor_y": 0.56,
+  "conversation_gap_px": 0,
+  "conversation_feather_px": 10,
+  "render_stall_timeout_sec": 120,
+  "render_timeout_sec": 900
 }

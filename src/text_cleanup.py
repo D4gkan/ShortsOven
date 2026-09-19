@@ -27,6 +27,7 @@ Two offline cleanup passes applied to every OCR line before narration:
 import os
 import re
 import string
+from dataclasses import replace
 from typing import List
 
 from .logger_setup import get_logger
@@ -209,8 +210,8 @@ def clean_lines(lines: List[TextLine]) -> List[TextLine]:
     """Applies username stripping + OCR-error cleanup to every
     detected line. Lines that consist ENTIRELY of a username (and
     therefore become empty after stripping) are dropped from the
-    list entirely -- there's nothing left to narrate or reveal, and
-    empty text must never reach tone analysis or speech generation."""
+    narration list only. Original OCR records and screenshot pixels remain
+    available for the visual layout."""
     cleaned_lines = []
     for line in lines:
         no_usernames = remove_usernames(line.text)
@@ -223,8 +224,7 @@ def clean_lines(lines: List[TextLine]) -> List[TextLine]:
 
         if cleaned != line.text:
             log.info(f"Line {line.index}: '{line.text}' -> '{cleaned}'")
-        line.text = cleaned
-        cleaned_lines.append(line)
+        cleaned_lines.append(replace(line, text=cleaned))
 
     if not cleaned_lines:
         log.warning("All OCR lines were removed during cleanup (usernames only?); "
