@@ -15,7 +15,7 @@ from src.text_cleanup import clean_lines
 
 class ConversationTests(unittest.TestCase):
     def fixture(self, count=8):
-        cfg = AppConfig(resolution="540x960", fps=30, conversation_chunk_lines=1)
+        cfg = AppConfig(resolution="540x960", fps=30, conversation_chunk_lines=1, conversation_shadow_opacity=0)
         lines = [TextLine(i, f"Message {i}.", 30, 30 + i * 180, 600, 100) for i in range(count)]
         timings = [LineTiming(i, line.text, i * 2.0, i * 2.0 + 1.5, i * 60, i * 60 + 45)
                    for i, line in enumerate(lines)]
@@ -125,6 +125,23 @@ class ConversationTests(unittest.TestCase):
         self.assertEqual(raw[1].text, "@alice_17 Hello there.")
         self.assertIsNot(raw[1], spoken[0])
 
+    def test_shadow_does_not_change_layout_or_opaque_content(self):
+        cfg, lines, timings, builder, plain = self.fixture(2)
+        cfg.conversation_shadow_opacity = 0.22
+        plan = builder.build_plan(lines, timings, (700, 360), (474, 244))
+        self.assertEqual(plan.initial_y, plain.initial_y)
+        self.assertEqual([c.shift for c in plan.chunks], [c.shift for c in plain.chunks])
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / "source.png"
+            Image.new("RGB", (700, 360), "white").save(source)
+            path = builder.export_chunks(str(source), plan, folder, lines)[0]
+            with Image.open(path) as image:
+                pixels = np.array(image)
+            pad = plan.shadow_padding
+            self.assertEqual(pixels.shape[1], plan.display_width + 2 * pad)
+            self.assertGreater(pixels[pad + 30, pad - 2, 3], 0)
+            np.testing.assert_array_equal(pixels[pad + 30, pad + 200], [255, 255, 255, 255])
+
     def test_complete_screenshot_survives_including_unspoken_media(self):
         raw = [TextLine(0, "@alice_17", 15, 15, 130, 20),
                TextLine(1, "First line.", 15, 50, 180, 25),
@@ -134,7 +151,7 @@ class ConversationTests(unittest.TestCase):
         spoken = [raw[1], raw[3]]
         timings = [LineTiming(line.index, line.text, i * 3, i * 3 + 2, i * 90, i * 90 + 60)
                    for i, line in enumerate(spoken)]
-        cfg = AppConfig(conversation_feather_px=0)
+        cfg = AppConfig(conversation_feather_px=0, conversation_shadow_opacity=0)
         builder = RevealBuilder(cfg)
         plan = builder.build_plan(spoken, timings, (400, 600), (400, 600), visual_lines=raw)
         self.assertEqual([c.line_indices for c in plan.chunks], [(1,), (3,)])

@@ -58,7 +58,7 @@ class Renderer:
             start = chunk.transition_start if i else 0
             filters.append(
                 f"[base{i}][chunk{i}]overlay=x=(W-w)/2:"
-                f"y='{chunk.stack_top:.6f}+({offset})':"
+                f"y='{chunk.stack_top - plan.shadow_padding:.6f}+({offset})':"
                 f"enable='gte(t,{start:.6f})':eval=frame:"
                 f"eof_action=repeat:format=auto[base{i + 1}]"
             )

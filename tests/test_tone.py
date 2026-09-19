@@ -10,10 +10,10 @@ from urllib.error import URLError
 from src.config import AppConfig
 from src.exceptions import ToneError, TTSError
 from src.tone_engine import ToneEngine, validate_tone
-from src.tts_engine import QwenTTSEngine
+from src.tts_engine import QwenTTSEngine, narration_instruction
 
 
-VALID = {"tone": "reflective", "instruct": "Speak gently with thoughtful pauses.", "voice_speed": 0.95}
+VALID = {"tone": "reflective", "instruct": "Speak gently with thoughtful pauses."}
 
 
 class ToneTests(unittest.TestCase):
@@ -30,14 +30,11 @@ class ToneTests(unittest.TestCase):
         self.assertEqual(call.call_args.kwargs["timeout"], 180)
         changed = tone.apply(cfg)
         self.assertEqual(changed.qwen_tts_instruct, VALID["instruct"])
-        self.assertEqual(changed.voice_speed, 0.95)
-        self.assertEqual(cfg.voice_speed, 1.0)
+        self.assertEqual(changed.voice_speed, 1.10)
+        self.assertEqual(cfg.voice_speed, 1.10)
 
     def test_invalid_fields(self):
-        for speed in (True, "1.0", 0.5, 2, float("nan"), float("inf")):
-            with self.subTest(speed=speed), self.assertRaises(ToneError):
-                validate_tone(dict(VALID, voice_speed=speed))
-        for data in ({}, [], dict(VALID, instruct=" "), dict(VALID, extra=1)):
+        for data in ({}, [], dict(VALID, instruct=" "), dict(VALID, extra=1), dict(VALID, voice_speed=0.9)):
             with self.subTest(data=data), self.assertRaises(ToneError):
                 validate_tone(data)
 
@@ -76,13 +73,20 @@ class ToneTests(unittest.TestCase):
         model = Mock()
         model.generate_custom_voice.return_value = ([[0.1]], 24000)
         tts._raw_generate(model, "Story", "Ryan")
-        self.assertEqual(model.generate_custom_voice.call_args.kwargs["instruct"], VALID["instruct"])
+        self.assertEqual(model.generate_custom_voice.call_args.kwargs["instruct"], narration_instruction(VALID["instruct"]))
         model.generate_custom_voice.side_effect = TypeError("Unsupported instruction")
         with self.assertRaises(TypeError):
             tts._raw_generate(model, "Story", "Ryan")
         self.assertEqual(model.generate_custom_voice.call_count, 2)
         with self.assertRaises(TTSError):
             tts._raw_generate(object(), "Story", "Ryan")
+
+    def test_whisper_request_cannot_override_delivery_rule(self):
+        instruction = narration_instruction("Whisper the story in a hushed voice. Build suspense with pauses.")
+        self.assertNotIn("Whisper the story", instruction)
+        self.assertIn("Build suspense with pauses.", instruction)
+        self.assertIn("Never whisper", instruction)
+        self.assertIn("fully voiced", instruction)
 
     def test_pipeline_orders_cleanup_tone_then_tts(self):
         import main

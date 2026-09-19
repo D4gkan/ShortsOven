@@ -30,7 +30,7 @@ class AppConfig:
     music_fade_in_sec: float = 1.5
     music_fade_out_sec: float = 2.0
     # Delivery is selected per story by Ollama before TTS.
-    voice_speed: float = 1.0
+    voice_speed: float = 1.10
     voice: str = "male"
     ollama_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen2.5:7b-instruct-q4_K_M"
@@ -79,9 +79,11 @@ class AppConfig:
     line_padding_px: int = 14
     conversation_chunk_lines: int = 1
     conversation_slide_sec: float = 0.32
-    conversation_anchor_y: float = 0.56
+    conversation_anchor_y: float = 0.46
     conversation_gap_px: int = 0
     conversation_feather_px: int = 10
+    conversation_shadow_opacity: float = 0.22
+    conversation_shadow_radius_px: int = 10
     video_codec: str = "libx264"
     video_bitrate: str = "12M"
     audio_codec: str = "aac"

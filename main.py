@@ -9,6 +9,7 @@ import traceback
 
 from PIL import Image
 
+from src import __version__
 from src.config import load_config
 from src.logger_setup import setup_logging, get_logger
 from src.exceptions import RedditVideoGenError
@@ -39,6 +40,7 @@ def compute_display_size(orig_w: int, orig_h: int, canvas_w: int, canvas_h: int)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="AI Reddit Story Video Generator")
+    parser.add_argument("--version", action="version", version=f"ShortsOven {__version__}")
     parser.add_argument(
         "--image", default=None,
         help="Use this specific image instead of picking one randomly "
@@ -53,7 +55,7 @@ def run():
     cfg = load_config()
     setup_logging(cfg.log_level)
 
-    log.info("=== AI Reddit Story Video Generator ===")
+    log.info(f"=== ShortsOven {__version__} ===")
 
     try:
         assets = AssetManager(cfg)

@@ -49,9 +49,12 @@
   "ollama_timeout_sec": 180,
   "conversation_chunk_lines": 1,
   "conversation_slide_sec": 0.32,
-  "conversation_anchor_y": 0.56,
+  "conversation_anchor_y": 0.46,
   "conversation_gap_px": 0,
   "conversation_feather_px": 10,
   "render_stall_timeout_sec": 120,
-  "render_timeout_sec": 900
+  "render_timeout_sec": 900,
+  "conversation_shadow_opacity": 0.22,
+  "conversation_shadow_radius_px": 10,
+  "voice_speed": 1.1
 }

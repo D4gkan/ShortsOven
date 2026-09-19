@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter
 
 from .exceptions import RenderError
 from .logger_setup import get_logger
@@ -39,6 +39,7 @@ class RevealPlan:
     initial_y: float
     gap: int
     feather: int
+    shadow_padding: int = 0
 
     def offset_at(self, seconds):
         return self.initial_y - sum(
@@ -73,6 +74,8 @@ class RevealBuilder:
             raise RenderError("conversation_anchor_y must be between 0.3 and 0.7.")
         if not 0 <= self.cfg.conversation_gap_px <= 80 or not 0 <= self.cfg.conversation_feather_px <= 40:
             raise RenderError("Conversation spacing or feather width is out of range.")
+        if not 0 <= self.cfg.conversation_shadow_opacity <= 0.6 or not 0 <= self.cfg.conversation_shadow_radius_px <= 30:
+            raise RenderError("Conversation shadow opacity or radius is out of range.")
         ow, oh = orig_image_size
         width = display_size[0]
         scale = width / ow
@@ -145,6 +148,8 @@ class RevealBuilder:
         plan = RevealPlan(width, chunks,
                           self.cfg.height * self.cfg.conversation_anchor_y - chunks[0].height / 2,
                           self.cfg.conversation_gap_px, self.cfg.conversation_feather_px)
+        if self.cfg.conversation_shadow_opacity:
+            plan.shadow_padding = 3 * self.cfg.conversation_shadow_radius_px + 4
         log.info("Building conversation feed: %s chunks; movements follow narration boundaries.", len(chunks))
         return plan
 
@@ -182,6 +187,28 @@ class RevealBuilder:
                     bottom = min(chunk.height, math.ceil((line.y + line.height - chunk.crop_top) * scale) + 2)
                     alpha[top:bottom, left:right] = 255
                 crop.putalpha(Image.fromarray(alpha))
+                if plan.shadow_padding:
+                    pad = plan.shadow_padding
+                    canvas_size = (crop.width + 2 * pad, crop.height + 2 * pad)
+                    shadow = Image.new("L", canvas_size, 0)
+                    # Extend internal joins before blurring, so the side shadow
+                    # remains continuous rather than outlining every text line.
+                    top = pad + 4 if i == 0 or plan.gap else -pad
+                    bottom = pad + crop.height + 3 if i == len(plan.chunks) - 1 or plan.gap else canvas_size[1] + pad
+                    ImageDraw.Draw(shadow).rectangle(
+                        (pad, top, pad + crop.width - 1, bottom),
+                        fill=round(255 * self.cfg.conversation_shadow_opacity))
+                    shadow = shadow.filter(ImageFilter.GaussianBlur(self.cfg.conversation_shadow_radius_px))
+                    if not plan.gap:
+                        draw = ImageDraw.Draw(shadow)
+                        if i:
+                            draw.rectangle((0, 0, canvas_size[0], pad - 1), fill=0)
+                        if i < len(plan.chunks) - 1:
+                            draw.rectangle((0, pad + crop.height, canvas_size[0], canvas_size[1]), fill=0)
+                    canvas = Image.new("RGBA", canvas_size, (0, 0, 0, 0))
+                    canvas.putalpha(shadow)
+                    canvas.alpha_composite(crop, (pad, pad))
+                    crop = canvas
                 path = os.path.abspath(os.path.join(output_dir, f"chunk_{i:04d}.png"))
                 crop.save(path)
                 paths.append(path)

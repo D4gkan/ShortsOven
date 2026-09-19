@@ -8,6 +8,7 @@ as one continuous take by alignment.py; cache keys include delivery settings.
 import hashlib
 import json
 import os
+import re
 import wave
 from typing import List
 
@@ -24,6 +25,25 @@ log = get_logger(__name__)
 # header records that rate, so downstream code (pydub, wave) reads it
 # back correctly regardless.
 _DEFAULT_SAMPLE_RATE = 24000
+
+
+NO_WHISPER_INSTRUCTION = (
+    "Always speak clearly with a fully voiced, resonant tone at normal conversational "
+    "volume. Never whisper or use hushed, breathy, or ASMR delivery. Convey emotion "
+    "through pacing and inflection while keeping the voice fully voiced. "
+    "Maintain lively, engaged energy and forward momentum appropriate to the story. "
+    "Never sound depressed, gloomy, lethargic, flat or mournful. For serious material, "
+    "stay compassionate and purposeful rather than cheerful or celebratory. "
+    "Avoid dragging speech, drawn-out pauses, shouting and overacting."
+)
+
+
+def narration_instruction(instruction):
+    # Drop conflicting delivery clauses before applying the mandatory rule.
+    clauses = re.split(r"(?<=[.!?;])\s*|[\r\n]+", instruction or "")
+    allowed = [clause for clause in clauses if not re.search(
+        r"whisper|hush|breathy|asmr|sotto\s+voce|depress|gloom|letharg|mournful|flat delivery|somber", clause, re.IGNORECASE)]
+    return " ".join([*allowed, NO_WHISPER_INSTRUCTION]).strip()
 
 
 class QwenTTSEngine:
@@ -185,7 +205,7 @@ class QwenTTSEngine:
             raise TTSError("This model does not support CustomVoice instructions. Run setup.bat with the configured Qwen3-TTS CustomVoice checkpoint.")
         wavs, sr = model.generate_custom_voice(
             text=text, language=self.cfg.qwen_tts_language,
-            speaker=voice_name, instruct=self.cfg.qwen_tts_instruct,
+            speaker=voice_name, instruct=narration_instruction(self.cfg.qwen_tts_instruct),
         )
         return wavs[0], sr
 
@@ -264,7 +284,7 @@ class QwenTTSEngine:
         speed = getattr(self.cfg, "voice_speed", 1.0) or 1.0
         key = hashlib.sha256(json.dumps({
             "version": 2, "voice": self.get_voice(), "text": text,
-            "speed": speed, "instruct": self.cfg.qwen_tts_instruct,
+            "speed": speed, "instruct": narration_instruction(self.cfg.qwen_tts_instruct),
             "language": self.cfg.qwen_tts_language,
             "model_id": self.cfg.qwen_tts_model_id, "model_dir": self.model_dir,
         }, sort_keys=True).encode("utf-8")).hexdigest()[:24]
