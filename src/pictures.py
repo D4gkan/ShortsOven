@@ -24,6 +24,14 @@ def detect_pictures(path):
     margin = max(2, int(w * .015))
     background = np.median(np.concatenate((rgb[:, :margin], rgb[:, -margin:]), axis=1), axis=1)
     distance = np.max(np.abs(rgb - background[:, None]), axis=2)
+    # A post may sit on a contrasting outer canvas (e.g. a white card on
+    # beige). Its dominant interior surface is also background, not a photo.
+    interior = rgb[:, int(w*.05):int(w*.95)]
+    bins = (interior.astype(np.uint16) // 16)
+    keys = bins[:, :, 0]*256 + bins[:, :, 1]*16 + bins[:, :, 2]
+    dominant = np.bincount(keys.ravel(), minlength=4096).argmax()
+    surface = np.median(interior[keys == dominant], axis=0)
+    distance = np.minimum(distance, np.max(np.abs(rgb-surface), axis=2))
     occupied = (distance[:, int(w*.05):int(w*.95)] > 18).mean(axis=1) > .68
     # Bridge small highlights inside a photo, without joining separated text rows.
     from cv2 import morphologyEx, MORPH_CLOSE
