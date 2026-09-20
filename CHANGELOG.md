@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Detect broad embedded pictures independently of OCR and reveal them as separate
+  chunks, with a half-second stationary hold plus short entrance/exit slides.
+- Pause narration for picture reveals and shift subsequent speech timings together.
+- Check generated and cached narration for sustained unvoiced delivery; retry once
+  with stronger vocal projection, then stop if the second take also fails.
+- Replace negative whisper prompts with affirmative voiced delivery instructions
+  and filter additional conflicting soft/quiet delivery requests.
+
 ## 1.0.0 — 2026-09-19
 
 First explicitly versioned ShortsOven release.
