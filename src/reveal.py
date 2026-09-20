@@ -60,7 +60,8 @@ class RevealBuilder:
     def __init__(self, cfg):
         self.cfg = cfg
 
-    def build_plan(self, lines, timings, orig_image_size, display_size, visual_lines=None):
+    def build_plan(self, lines, timings, orig_image_size, display_size, visual_lines=None, pictures=None):
+        pictures = pictures or []
         if not lines or len(lines) != len(timings):
             raise RenderError("Conversation chunks require matching OCR lines and speech timings.")
         if any(line.index != timing.index for line, timing in zip(lines, timings)):
@@ -86,7 +87,7 @@ class RevealBuilder:
             if current:
                 prev = lines[current[-1]]
                 gap = line.y - (prev.y + prev.height)
-                if gap > max(prev.height, line.height) * 1.2:
+                if gap > max(prev.height, line.height) * 1.2 or any(prev.y < p.top < line.y for p in pictures):
                     groups.append(current)
                     current = []
             current.append(i)
@@ -98,8 +99,8 @@ class RevealBuilder:
 
         # Narration defines WHEN to reveal; it must never decide WHICH pixels
         # survive. Partition the entire screenshot into contiguous strips.
-        # Keep intervening usernames/media with the next narrated line, and
-        # include the footer/trailing picture in the final strip.
+        # Keep intervening usernames/undetected media with the next narrated
+        # line. Detected pictures are split into separate strips below.
         visual_lines = lines if visual_lines is None else visual_lines
         boundaries = [0]
         for group in groups[:-1]:
@@ -114,20 +115,29 @@ class RevealBuilder:
             boundaries.append(boundary)
         boundaries.append(oh)
 
+        # Merge visual picture events with spoken events in source order. The
+        # resulting strips still cover every pixel exactly once, including names.
+        events = [(lines[g[0]].y, g, None, boundaries[i + 1]) for i, g in enumerate(groups)]
+        events += [(p.top, [], p, p.bottom) for p in pictures]
+        events.sort(key=lambda event: event[0])
         chunks = []
         stack_top = 0
-        for group_index, group in enumerate(groups):
-            first, last = group[0], group[-1]
-            top, bottom = boundaries[group_index:group_index + 2]
+        top = 0
+        for event_index, (_, group, picture, bottom) in enumerate(events):
+            if event_index + 1 == len(events):
+                bottom = oh
+            elif events[event_index + 1][2] is not None:
+                bottom = events[event_index + 1][2].top
             if bottom <= top:
                 raise RenderError("Invalid OCR crop bounds for a conversation chunk.")
             height = max(1, round(bottom * scale) - round(top * scale))
-            start = max(0.0, timings[first].start_sec)
-            end = max(start, timings[last].end_sec)
+            start = picture.start_sec if picture else max(0.0, timings[group[0]].start_sec)
+            end = picture.end_sec if picture else max(start, timings[group[-1]].end_sec)
             chunk = ConversationChunk(tuple(lines[i].index for i in group), top, bottom,
                                       height, stack_top, start, end)
             chunks.append(chunk)
             stack_top += height + self.cfg.conversation_gap_px
+            top = bottom
 
         for i, chunk in enumerate(chunks[1:], 1):
             prev = chunks[i - 1]
@@ -135,6 +145,8 @@ class RevealBuilder:
             # introduction of the new chunk, never a continuous scroll.
             start = max(prev.end_sec, chunk.start_sec - self.cfg.conversation_slide_sec)
             start = min(start, chunk.start_sec)
+            if not chunk.line_indices:
+                start = chunk.start_sec
             if i > 1:
                 start = max(start, prev.transition_start + prev.transition_duration)
             next_start = chunks[i + 1].start_sec if i + 1 < len(chunks) else chunk.end_sec

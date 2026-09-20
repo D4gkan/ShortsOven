@@ -16,6 +16,7 @@ from .config import AppConfig
 from .exceptions import TTSError
 from .logger_setup import get_logger
 from .ocr_engine import TextLine
+from .voice_quality import likely_whisper
 
 log = get_logger(__name__)
 
@@ -29,10 +30,10 @@ _DEFAULT_SAMPLE_RATE = 24000
 
 NO_WHISPER_INSTRUCTION = (
     "Always speak clearly with a fully voiced, resonant tone at normal conversational "
-    "volume. Never whisper or use hushed, breathy, or ASMR delivery. Convey emotion "
+    "volume. Use firm vocal projection and clear voiced vowels. Convey emotion "
     "through pacing and inflection while keeping the voice fully voiced. "
     "Maintain lively, engaged energy and forward momentum appropriate to the story. "
-    "Never sound depressed, gloomy, lethargic, flat or mournful. For serious material, "
+    "Use alert, expressive storytelling. For serious material, "
     "stay compassionate and purposeful rather than cheerful or celebratory. "
     "Avoid dragging speech, drawn-out pauses, shouting and overacting."
 )
@@ -42,7 +43,9 @@ def narration_instruction(instruction):
     # Drop conflicting delivery clauses before applying the mandatory rule.
     clauses = re.split(r"(?<=[.!?;])\s*|[\r\n]+", instruction or "")
     allowed = [clause for clause in clauses if not re.search(
-        r"whisper|hush|breathy|asmr|sotto\s+voce|depress|gloom|letharg|mournful|flat delivery|somber", clause, re.IGNORECASE)]
+        r"whisper|hush|breathy|asmr|sotto\s+voce|soft[- ]?spoken|softly|quiet(?:ly)?|"
+        r"low[- ]volume|intimate|under (?:your|the) breath|depress|gloom|letharg|mournful|flat delivery|somber",
+        clause, re.IGNORECASE)]
     return " ".join([*allowed, NO_WHISPER_INSTRUCTION]).strip()
 
 
@@ -174,7 +177,10 @@ class QwenTTSEngine:
                       else "qwen_male_voice_candidates")
         for voice_name in candidates:
             try:
-                self._raw_generate(model, "This is a voice check.", voice_name)
+                result = self._raw_generate(model, "This is a voice check.", voice_name)
+                audio, sample_rate = self._unpack_audio(result)
+                if likely_whisper(audio, sample_rate):
+                    raise TTSError("Voice check did not produce clear voiced speech")
                 log.info(f"Using offline {self.gender} voice: {voice_name}")
                 return voice_name
             except Exception as e:
@@ -199,13 +205,15 @@ class QwenTTSEngine:
     # ------------------------------------------------------------------
     # Generation (adapter over the qwen_tts model's actual call signature)
     # ------------------------------------------------------------------
-    def _raw_generate(self, model, text: str, voice_name: str):
+    def _raw_generate(self, model, text: str, voice_name: str, retry=False):
         """Require instruction-capable CustomVoice; never discard story tone."""
         if not hasattr(model, "generate_custom_voice"):
             raise TTSError("This model does not support CustomVoice instructions. Run setup.bat with the configured Qwen3-TTS CustomVoice checkpoint.")
         wavs, sr = model.generate_custom_voice(
             text=text, language=self.cfg.qwen_tts_language,
-            speaker=voice_name, instruct=narration_instruction(self.cfg.qwen_tts_instruct),
+            speaker=voice_name, instruct=narration_instruction(self.cfg.qwen_tts_instruct) + (
+                " Project your voice to a listener across the room. Use a strong, clear, "
+                "resonant speaking voice throughout every sentence." if retry else ""),
         )
         return wavs[0], sr
 
@@ -283,7 +291,7 @@ class QwenTTSEngine:
     def _cache_path(self, text: str) -> str:
         speed = getattr(self.cfg, "voice_speed", 1.0) or 1.0
         key = hashlib.sha256(json.dumps({
-            "version": 2, "voice": self.get_voice(), "text": text,
+            "version": 3, "voice": self.get_voice(), "text": text,
             "speed": speed, "instruct": narration_instruction(self.cfg.qwen_tts_instruct),
             "language": self.cfg.qwen_tts_language,
             "model_id": self.cfg.qwen_tts_model_id, "model_dir": self.model_dir,
@@ -303,21 +311,30 @@ class QwenTTSEngine:
 
         out_path = self._cache_path(text)
         if os.path.exists(out_path):
-            return out_path
+            import soundfile as sf
+            cached, rate = sf.read(out_path)
+            if not likely_whisper(cached, rate):
+                return out_path
+            log.warning("Cached narration failed the voiced-speech check; regenerating.")
+            os.remove(out_path)
 
         model = self._load_model()
         voice = self.get_voice()
 
         try:
-            result = self._raw_generate(model, text, voice)
+            for attempt in range(2):
+                result = self._raw_generate(model, text, voice, retry=bool(attempt))
+                audio, sample_rate = self._unpack_audio(result)
+                if not likely_whisper(audio, sample_rate):
+                    break
+                if attempt == 0:
+                    log.warning("Narration contains likely whispered/unvoiced delivery; retrying once with stronger vocal projection.")
+                else:
+                    raise TTSError("Narration failed the voiced-speech check twice. No rejected take was saved. Try another voice preset.")
         except TTSError:
             raise
         except Exception as e:
             raise TTSError(f"Qwen3-TTS failed to synthesize narration:\n{e}") from e
-
-        audio, sample_rate = self._unpack_audio(result)
-        if audio is None or audio.size == 0:
-            raise TTSError("Qwen3-TTS produced empty audio for a non-empty line.")
 
         try:
             import soundfile as sf

@@ -23,14 +23,19 @@ mixed underneath.
 ## Version 1.0.0
 
 - **Adaptive, engaged narration:** Ollama chooses the story's tone while TTS
-  keeps delivery lively, clear and fully voiced. Whispering and gloomy delivery
-  are discouraged by mandatory delivery instructions.
+  keeps delivery lively, clear and fully voiced. An acoustic check rejects likely
+  whispered takes and retries once with stronger vocal projection. If both takes
+  fail, generation stops instead of accepting the rejected audio.
 - **Consistent pace:** playback speed defaults to **1.10×**; Ollama cannot change it.
 - **One line at a time:** connected screenshot sections slide upward only when
   new content arrives. Each move equals the new section's height, with no added gap.
 - **Complete visuals:** usernames, embedded pictures and footers remain visible
   even when excluded from speech. The first section starts slightly above center,
   with feathered outer edges and subtle shadows.
+- **Picture reveals:** broad embedded photos get their own chunk and a **0.5-second
+  settled hold**, with narration paused. Entrance/exit slides add time around that
+  hold; the next spoken line follows afterward. Text found inside a detected photo
+  stays in the picture instead of becoming a separate narrated line.
 - **Clearer operation:** compact launcher, live stage/progress display, bounded
   render waits and retained working files after failures.
 
@@ -55,6 +60,7 @@ modified version as your own without prior written permission.
 5. **Synchronize:** faster-whisper transcribes the audio with word timestamps;
    fuzzy matching maps those words back to screenshot lines. Unmatched lines
    use a logged timing fallback, so alignment is best-effort rather than exact.
+   Picture pauses are inserted into the audio and all later timestamps shift together.
 6. **Render:** nearby OCR lines form short cropped sections. The first appears
    slightly above screen center. Each new section joins below and pushes the whole stack
    upward with smooth easing; the stack holds still between additions. Old
@@ -66,6 +72,12 @@ and playful; suspense can build gradually. Ollama provides one configuration for
 each story, including instructions for emotional changes within the narration.
 It does not rewrite the text or select the speaker. Delivery quality depends on
 both the tone model and Qwen's interpretation of the instruction.
+
+The voiced-speech check measures periodicity over sustained audio windows, not
+volume alone. It is a heuristic: it can miss brief or partly voiced whispers and
+can occasionally reject unusual normal speech. Old narration caches are invalidated
+for this change. Picture detection uses broad visual regions on light/dark post
+backgrounds; tiny images or unusual layouts may remain attached to nearby text.
 
 ## Installation on Windows
 

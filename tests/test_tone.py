@@ -85,7 +85,8 @@ class ToneTests(unittest.TestCase):
         instruction = narration_instruction("Whisper the story in a hushed voice. Build suspense with pauses.")
         self.assertNotIn("Whisper the story", instruction)
         self.assertIn("Build suspense with pauses.", instruction)
-        self.assertIn("Never whisper", instruction)
+        self.assertNotIn("whisper", instruction.lower())
+        self.assertIn("firm vocal projection", instruction)
         self.assertIn("fully voiced", instruction)
 
     def test_pipeline_orders_cleanup_tone_then_tts(self):
@@ -100,6 +101,7 @@ class ToneTests(unittest.TestCase):
              patch.object(main, "AssetManager") as assets, \
              patch.object(main.Image, "open") as image, \
              patch.object(main, "OCREngine") as ocr, \
+             patch.object(main, "detect_pictures", return_value=[]), \
              patch.object(main, "clean_lines", side_effect=lambda _: events.append("cleanup") or lines), \
              patch.object(main, "ToneEngine") as engine, \
              patch.object(main, "QwenTTSEngine") as tts, \

@@ -21,6 +21,7 @@ from src.tone_engine import ToneEngine
 from src.alignment import AlignmentEngine
 from src.reveal import RevealBuilder
 from src.renderer import Renderer
+from src.pictures import detect_pictures, outside_pictures, insert_picture_pauses
 
 log = get_logger("main")
 
@@ -70,7 +71,10 @@ def run():
 
         ocr = OCREngine(cfg)
         visual_lines = ocr.detect_lines(working_image)
-        lines = clean_lines(visual_lines)
+        pictures = detect_pictures(working_image)
+        narration_lines = [line for line in visual_lines if outside_pictures(line, pictures)]
+        lines = clean_lines(narration_lines)
+        log.info("Detected %s separate picture reveals.", len(pictures))
 
         story = " ".join(line.text.strip() for line in lines if line.text.strip())
         cfg = ToneEngine(cfg).analyze(story).apply(cfg)
@@ -81,6 +85,10 @@ def run():
         timings = aligner.build_narration(lines, narration_path)
 
         duration_sec = timings[-1].end_sec + TAIL_SILENCE_SEC
+        if pictures:
+            timings, audio_duration = insert_picture_pauses(
+                narration_path, lines, timings, pictures, cfg.fps, cfg.conversation_slide_sec)
+            duration_sec = audio_duration + TAIL_SILENCE_SEC
 
         prepared_bg_path = cfg.abspath(os.path.join(cfg.cache_dir, "prepared_background.mp4"))
         assets.prepare_background(selected.background_path, duration_sec, prepared_bg_path)
@@ -89,7 +97,7 @@ def run():
 
         reveal = RevealBuilder(cfg)
         plan = reveal.build_plan(lines, timings, (orig_w, orig_h), (display_w, display_h),
-                                 visual_lines=visual_lines)
+                                 visual_lines=visual_lines, pictures=pictures)
         chunk_paths = reveal.export_chunks(
             working_image, plan, cfg.abspath(os.path.join(cfg.cache_dir, "conversation")), visual_lines
         )
