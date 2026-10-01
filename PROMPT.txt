@@ -1,464 +1,219 @@
-## 1. Pick the emotional target first
+# SOCIAL STORY GENERATOR
 
-Before anything else, pick the ONE feeling this post should leave someone
-with. This choice drives every downstream decision — mechanism, voice,
-artifact, pacing. Rotate across these; don't default to the same one every
-time, or the output starts feeling like a template instead of a real find:
+Create one highly engaging social-media post built around a story, fact, anecdote, conversation, explanation, or discovery that makes someone stop scrolling and want to hear the rest.
 
-- **Funny / absurd** — the reader laughs or sends it to someone immediately.
-- **Petty outrage / relatable exasperation** — "this is so real it's annoying."
-- **Uncanny / unsettling** — something quietly wrong that lingers.
-- **Jaw-dropping disbelief** — "there's no way this is real."
-- **Wholesome subversion** — braces for something bad, gets something sweet
-  (or the reverse — braces for wholesome, gets a dark turn).
+The result must feel like a real post someone naturally encountered online, not an infographic, advertisement, news graphic, meme template, or AI-designed content card.
 
-A post that's merely "mildly interesting" won't move. Pick a target strong
-enough that someone would tag a friend or reply within three seconds of
-reading it.
+## 1. STORY FIRST
 
-Match the story's pace to its emotional target. It can be funny and lively,
-quietly moving, reflective, or slowly suspenseful. Keep the situation specific
-and compelling without forcing excitement. The narration pipeline analyzes
-the finished story with Ollama and chooses a fitting delivery before TTS.
+The story is the most important element.
 
-Favor stories that feel genuinely alarming, uncanny, darkly funny, or deeply
-strange. The best versions hit with a sharp mix of disbelief, dread, and
-comic timing. The story should not be safe or polite; it should feel like the
-kind of thing that makes someone stop scrolling and immediately send it to a
-friend.
+Choose the subject freely and independently for every generation. The subject may come from history, science, technology, culture, everyday life, entertainment, human behavior, unusual events, personal experiences, the internet, or another naturally interesting area.
 
-Allowed tone includes dry, suggestive, teasing innuendo and playful sexual
-humor when it is indirect, not explicit, and not graphic. Keep it implied,
-clever, and wink-and-nudge rather than explicit or pornographic.
+The story should produce one strong response: curiosity, amusement, fascination, disbelief, warmth, awkwardness, surprise, unease, or another emotion appropriate to the subject.
 
-## 2. The underlying mechanism
+Do not force comedy, darkness, shock, or wholesomeness when the story does not naturally support it.
 
-Every version of this format runs on an asymmetry, stated plainly, then
-reframed. Pick ONE, chosen to serve the emotional target from step 1:
+Do not rely on a fixed catalog of story ideas. Invent the subject and angle fresh every time.
 
-- **Magnitude mismatch** — a small input maps to a wildly disproportionate
-  output, or something that sounds huge turns out nearly invisible.
-- **Escalation** — a sequence that starts ordinary and, step by step, tips
-  into absurd. The reveal is the trajectory, not one fact.
-- **Claim vs. artifact** — an unbelievable statement, followed by something
-  that looks like proof.
-- **Deadpan reframe** — something that reads as neutral until a second party
-  points out its funny or uncomfortable implication.
-- **Mundane container, extraordinary content** — boring packaging undersells
-  something huge inside it.
+## 2. ORIGINALITY
 
-## 3. Comedy craft (apply whenever the target is funny/absurd/outrage)
+Generate the underlying subject BEFORE deciding how to present it.
 
-Humor has its own mechanics, separate from surprise. When comedy is the
-target, follow these or the "joke" will just read as a fact with a laugh
-emoji attached:
+Do not imitate, paraphrase, reskin, or make minor variations of stories from the prompt, previous generations, familiar viral posts, or common examples.
 
-- **Never explain the joke.** The reaction/comment should never state what's
-  funny about the setup — it should just add a new, deadpan detail that makes
-  the reader do the connecting themselves. Explaining kills it every time.
-- **Specificity is the punchline.** An oddly precise, slightly unnecessary
-  detail is inherently funnier than a vague one. When inventing content,
-  always reach for the more specific, weirder-but-plausible version of any
-  number, name, or noun.
-- **Understatement beats escalation in the punchline.** The setup can
-  escalate; the reaction/final line almost never should — a flat, dry final
-  beat lands harder than an exclamation point.
-- **Dark humor is allowed when it fits the story.** A comment can land with a
-  dry, darkly funny undercut, a sense of dread, or a bitter little twist as
-  long as it still feels human and not mean-spirited or forced.
-- **Comments should carry a dark, sarcastic edge.** Reactions and replies
-  should often feel dry, cutting, or wry — a little cynical, quietly mean,
-  or underhandedly funny rather than warm or wholesome. The humor can be
-  sarcastic, deadpan, or bleakly amused, but it must still read like a real
-  person online rather than a polished punchline.
-- **Incongruity, not absurdity for its own sake.** The funniest pairing is
-  two believable things that shouldn't belong in the same sentence, not one
-  outlandish invented thing.
-- **Let the reader be the one who "gets it."** If the joke requires the post
-  to point at itself, cut it and find a version that doesn't.
+Avoid repeatedly returning to the same people, industries, historical periods, objects, situations, twists, or types of trivia.
 
-## 3A. Visual comedy engineering
+A new generation should differ at the conceptual level, not merely by changing names, numbers, locations, or objects.
 
-When the emotional target is funny / absurd, the IMAGE itself must contribute
-to the joke. Do not treat the artifact as merely evidence for the written
-story. The visual should contain a funny, awkward, oddly specific, or
-unexpected element that makes the viewer laugh even before fully processing
-the text.
+## 3. THE HOOK
 
-Use ONE primary visual-comedy mechanism per generation, chosen naturally:
+The opening sentence should immediately create a reason to continue reading.
 
-- **Awkward reality** — the photo captures a completely ordinary situation
-  with one deeply awkward detail visible in the background or foreground.
-- **Visual contradiction** — the image appears to prove the story while also
-  quietly contradicting what a normal person would expect.
-- **Bad timing** — the screenshot/photo appears to capture the exact wrong
-  moment, creating an unintentionally hilarious result.
-- **Overly specific behavior** — a person, animal, object, or account is doing
-  something strangely precise that makes the situation funnier.
-- **Background joke** — the main subject looks normal, but a secondary detail
-  in the background creates a second joke.
-- **Human incompetence** — the artifact shows a believable mistake, failed
-  attempt, misunderstanding, or poorly thought-out decision.
-- **Accidental comedy** — nobody in the artifact appears to realize how funny
-  the situation looks.
-- **Unnecessary commitment** — someone has gone to an absurd amount of effort
-  to solve a very small or mundane problem.
-- **Wrong solution** — the person clearly solved the problem, but in a bizarre
-  way that creates a new problem.
-- **Dead-serious absurdity** — the visual is presented completely normally
-  even though the situation itself is ridiculous.
-- **Tiny detail with huge implications** — one small visible object, word,
-  expression, or environmental detail radically changes how the viewer reads
-  the scene.
-- **Social awkwardness** — the visual captures a believable moment of
-  embarrassment, misunderstanding, confusion, or accidental oversharing.
+A strong hook usually introduces an unanswered question, unusual decision, contradiction, specific problem, surprising observation, strange event, or unexpected relationship between otherwise ordinary things.
 
-The visual joke must feel DISCOVERED rather than DESIGNED.
+Begin directly with the interesting material.
 
-Do not add obvious comedy graphics, reaction stickers, arrows, circles,
-captions, meme text, impact fonts, cartoon effects, exaggerated facial
-expressions, or other artificial indicators telling the viewer where the joke
-is.
+Avoid announcing that something is interesting, unbelievable, shocking, crazy, amazing, or surprising. Let the information create that reaction itself.
 
-The viewer should notice the funny detail naturally.
+## 4. STORY DEVELOPMENT
 
-## 3B. Photographic specificity
+Let the structure emerge naturally from the subject.
 
-When the artifact is a photograph, generate a scene that feels like a real
-person happened to capture an unusually funny moment rather than a staged
-comedy photograph.
+The story should generally move from an immediately interesting setup into context, increasingly meaningful or surprising information, and a satisfying payoff, consequence, explanation, revelation, or final detail.
 
-For photo-based artifacts, the frame should be tightly composed and visually
-packed with relevant content. Fill the image area with the subject, objects,
-and environment; do not leave large empty areas, blank walls, or floating
-negative space unless the story specifically requires it. The subject should
-feel close to the edges of the frame, with the composition feeling discovered
-rather than posed.
+Not every story needs a twist.
 
-Prefer:
+Not every story needs a conclusion.
 
-- imperfect framing
-- slightly inconvenient camera angles
-- ordinary locations
-- realistic clutter
-- believable lighting
-- natural human expressions
-- people looking away from the camera when appropriate
-- objects positioned imperfectly
-- mundane backgrounds
-- accidental cropping
-- small environmental details
-- believable physical mistakes
-- oddly specific objects
-- realistic animal behavior
-- situations that look accidental rather than posed
-- tight, full-frame compositions that use the entire image area
+Not every story needs the same pacing.
+
+Do not withhold basic information artificially just to manufacture suspense.
+
+Each new sentence should either advance the story, clarify something important, or make the situation more interesting.
+
+Remove sentences that merely repeat or summarize what has already been established.
+
+## 5. WRITING STYLE
+
+Write like an intelligent person naturally telling other people something genuinely worth sharing.
+
+Use conversational English, concrete details, varied sentence lengths, natural transitions, and appropriate quotations or dialogue when they genuinely improve the story.
+
+Specificity is important. Names, quantities, durations, objects, locations, actions, and other details should be precise when precision makes sense.
+
+Do not manufacture arbitrary specificity solely to make fictional information appear factual.
 
 Avoid:
 
-- cinematic composition
-- professional photography
-- perfectly centered subjects
-- studio lighting
-- exaggerated reactions
-- obviously AI-generated weirdness
-- impossible physics
-- surreal objects unless the story specifically requires them
-- "random funny stuff" inserted only to make the image humorous
-- large empty backgrounds, dead space, or wide negative margins
-- any readable text on the photo itself, including signs, labels, stickers,
-  product packaging text, phone screens, menus, clothing text, or visible
-  writing in the environment
+- corporate writing
+- motivational language
+- generic clickbait
+- excessive adjectives
+- repetitive dramatic fragments
+- forced jokes
+- explaining jokes
+- fake profound conclusions
+- generic AI phrasing
+- unnecessary summaries
+- repetitive rhetorical questions
 
-The visual should look like something someone genuinely found, photographed, or
-screenshotted and immediately thought, "what am I looking at?" The photo
-inside the story must be visually clean and text-free; if a readable word or
-label appears, it breaks the illusion and must be removed.
+The writing should sound authored rather than generated.
 
-## 3C. Visual punchline hierarchy
+## 6. FACTUAL AND PERSONAL STORIES
 
-When creating a funny artifact, prioritize humor in this order:
+When presenting something as factual, historical, scientific, biographical, or otherwise real, do not knowingly fabricate the central claim or supporting evidence.
 
-1. The situation itself
-2. The specific visual detail
-3. The written story
-4. The reaction/comment
+Do not invent damaging allegations, crimes, scandals, quotations, or misconduct involving identifiable real people.
 
-The image must not depend entirely on the caption to become funny.
+Invented personal anecdotes are allowed when appropriate, but they must behave like plausible human experiences rather than elaborate fiction disguised as documentary evidence.
 
-Whenever possible, make the viewer notice the main situation first, then discover
-one additional detail after looking for another second.
+## 7. SOCIAL-MEDIA PRESENTATION
 
-The secondary detail should enhance the original joke rather than introduce a
-completely separate story.
+Choose the social platform and post format that naturally fit the generated story.
 
-## 3D. Realistic imperfection
+Vary the platform and presentation between generations.
 
-Funny internet discoveries often feel funny because they are imperfect.
+Reproduce the recognizable visual language of the selected platform convincingly, including typography, spacing, hierarchy, avatar placement, account information, line wrapping, margins, replies, and other necessary interface elements.
 
-Do not make every element look clean, intentional, or professionally arranged.
+The result should look like an actual screenshot from a social-media feed.
 
-For photographs, allow believable imperfections such as:
+Do not create a custom graphic that merely resembles social media.
 
-- slightly crooked framing
-- clutter
-- awkward cropping
-- ordinary household objects
-- strange but plausible positioning
-- mild motion blur when appropriate
-- imperfect exposure
-- an unflattering but natural camera angle
-- people caught mid-action
-- animals behaving unpredictably
-- objects partially obscuring other objects
+Do not add unnecessary interface elements.
 
-For screenshots, allow believable imperfections such as:
+## 8. ACCOUNT IDENTIFIERS
 
-- awkward wording
-- typos when relevant
-- strange capitalization
-- inconsistent punctuation
-- unnecessarily specific phrasing
-- awkward usernames
-- mildly chaotic conversation flow
+Every username must contain at least one letter and either a digit or underscore.
 
-Do NOT add imperfections randomly. Every imperfection must feel native to the
-artifact and believable for the platform.
+If a separate display name appears, it must contain at least one letter and at least one digit, and must not contain an underscore.
 
-## 3E. The "why did they do that?" test
+Account identifiers should appear natural for the selected platform.
 
-For comedy-focused generations, try to create one moment where the viewer's
-natural reaction is:
+These identifier constraints are mandatory because usernames and display names are removed from narration by downstream processing.
 
-"Why would anyone do that?"
+## 9. VISUAL ARTIFACTS
 
-The answer should NOT be immediately explained.
+An image or other visual artifact is optional.
 
-The behavior must remain plausible enough that the viewer can imagine a real
-person actually doing it.
+Include one only when it materially improves the story, provides useful evidence, documents the subject, or makes the post substantially more interesting.
 
-The funniest situations are often not impossible. They are ordinary human
-decisions taken one step further than common sense would recommend.
+The artifact must directly relate to the actual subject of the story.
 
-## 3F. Animal comedy
+Never insert generic stock imagery simply to fill space.
 
-When animals appear, do not make them behave like cartoon characters.
+Do not manufacture unrelated visual jokes or background events.
 
-Use realistic animal behavior combined with human interpretation.
+Photographs should match their supposed source and context. Casual photographs should retain believable imperfections rather than looking cinematic, staged, professionally lit, or artificially polished.
 
-Examples of useful mechanisms:
+Historical or documentary material should visually fit its claimed context.
 
-- an animal appearing to deliberately ignore an obvious situation
-- an animal occupying an extremely inconvenient location
-- an animal accidentally causing a mundane problem
-- an animal appearing completely comfortable while humans are confused
-- an animal interacting with an oddly specific household object
-- an animal caught at an unfortunate but believable moment
+## 10. TEXT INSIDE PHOTOGRAPHS
 
-The animal itself should not need to have an exaggerated facial expression.
+Avoid readable generated text inside photographic artifacts unless written information is genuinely essential to the story.
 
-The humor should come from the situation.
+The social-media interface itself may contain readable text.
 
-## 3G. No forced visual jokes
+This restriction reduces OCR contamination and visual-generation errors.
 
-Never add a funny object, person, facial expression, background event, sign,
-or visual detail unless it has a direct relationship to the story.
+## 11. COMMENTS AND REPLIES
 
-Do not create a "busy funny background."
+Comments and replies are optional.
 
-Do not put multiple jokes into one image.
+Include them only when they add meaningful information, context, humor, clarification, contradiction, or another worthwhile layer to the story.
 
-Do not make every person react dramatically.
+Never add comments merely because social-media posts normally have comments.
 
-Do not make every animal look mischievous.
+Avoid empty reactions that contribute nothing.
 
-Do not add easter eggs merely because they are funny.
+A post may contain no replies at all when the main story is already complete.
 
-ONE strong visual joke is better than five unrelated jokes.
+## 12. OCR AND NARRATION
 
-## 3H. Internet-discovery authenticity
+The finished screenshot will be processed by OCR and converted into spoken narration.
 
-The artifact should feel like it existed BEFORE the story was written.
+Optimize the composition accordingly.
 
-It should look as though someone encountered it naturally and decided to share
-it.
+Story text must be clearly readable, sufficiently large, logically ordered, and visually separated from irrelevant interface elements.
 
-For photographs, prefer the visual language of:
+Avoid decorative text, overlapping text, tiny writing, excessive interface labels, or anything likely to enter OCR without contributing to the narration.
 
-- casual phone photos
-- security-camera captures when relevant
-- screenshots of someone's original post
-- ordinary social-media uploads
-- accidental photos
-- blurry-but-readable snapshots
-- mundane documentation of something unexpectedly strange
-- closely cropped, full-frame discoveries with no wasted space
-
-For text artifacts, preserve the feeling of an actual person writing quickly
-rather than a professional comedy writer constructing a joke.
+Never show:
 
-For photo-based artifacts, the image must be free of all readable text. No
-text on signs, labels, screens, packaging, shirts, posters, notes, or any
-other object. If the story requires an in-scene artifact, it should be a clean
-image with no written language anywhere within the frame. Keep the composition
-tight and occupied so the photo feels intentional without being staged.
-
-The artifact must never look like a purpose-built advertisement, comedy graphic,
-or polished content-production asset.
-
-## 4. Specificity rule (content-blind)
-
-Whatever fact, quote, name, or number gets invented — for any emotional
-target, not just comedy — it must be concrete and exact, never vague or
-round. This applies to every layer: opening claim, artifact contents, and
-reaction. Invent the specifics fresh each run, calibrated to the mechanism
-chosen in step 2.
-
-## 5. Artifact selection logic
-
-Ask: what would a real person actually have screenshotted to share this?
-Let the answer fall out of the emotional target and mechanism, not a fixed
-list:
-
-- something visually verifiable → a photo or video frame
-- something said or typed → a chat thread, comment section, or post
-- something looked up or answered → a search/AI-assistant screenshot
-- something involving two states or two subjects → a side-by-side or
-  before/after pairing
-- something that got buried → an unremarkable-looking post/account that
-  undersells its own contents
-
-Only one artifact type should dominate. Stack two only if the mechanism
-genuinely needs it (e.g. a claim on one platform verified by evidence on
-another).
-
-## 6. Structural layers (use only what the story needs)
-
-- **Opening line** — states the setup in specific terms. Precision creates
-  the reaction on its own — it doesn't need to withhold information. Register
-  ranges from clean/factual to casually typed depending on platform.
-- **Artifact** — the evidence, styled with real UI conventions of its actual
-  platform. In-artifact text is fine when the artifact type is inherently
-  textual.
-- **Artifact relevance rule:** the image or screenshot inside the story must be
-  directly relevant to the story's actual subject, event, object, location, or
-  reveal. It must not be a random generic stock image, unrelated photo, or
-  decorative visual that could belong to any story.
-
-  For comedy-focused generations, the artifact should ideally contain a
-  visually observable reason the story is funny. The viewer should be able to
-  discover at least one specific visual detail that reinforces, complicates,
-  or unexpectedly reframes the written story.
-
-  The visual joke must arise naturally from the documented situation. Never
-  manufacture comedy by adding unrelated funny objects, meme imagery,
-  exaggerated reactions, stickers, arrows, circles, captions, or other
-  editorial comedy devices.
-
-Use the minimal structure the mechanism needs — some posts are just an
-escalating thread with no separate artifact or reaction at all.
-
-## 7. Addictiveness / shareability engineering
-
-- **Give it a send-to-a-friend hook.** Somewhere in the post — usually the
-  reaction line — there should be a moment specific enough that a reader
-  pictures exactly who they'd send it to, without the post saying "tag
-  someone" outright.
-- **Reward a second look.** Where possible, plant one small detail that only
-  lands on a reread (a word choice, a number, a name) rather than putting
-  every payoff in the first pass.
-- **One clean emotional hit, not several diluted ones.** Resist stacking
-  multiple jokes or twists — a single sharp hit outperforms a cluttered one.
-- **Vary the shape across generations.** Alternate emotional targets,
-  mechanisms, and artifact types run over run so the body of output doesn't
-  converge on one recognizable formula.
-
-## 8. Realism discipline
-
-- Every piece of visible text must be complete and specific — never a
-  placeholder.
-- No design polish: plain white or true dark-mode background, no gradients,
-  no stock-photo lighting, no ad-like composition. It should look scrolled
-  past and screenshotted, not designed.
-- Output must be strictly 3:4 aspect ratio. No landscape, square, or unusual
-  framing.
-- Every profile picture must be realistic, platform-appropriate, and specific to
-  that platform's social context. For example: casual personal portrait for a
-  personal account, clean brand-style avatar for a business account, or a
-  niche-interest profile image if the platform implies that. The avatar should
-  look like a real person or real account, not a cartoon, abstract icon, or
-  generic AI face.
-
-## 9. Hard pipeline constraints (non-negotiable, every generation)
-
-These exist because the output feeds an automated OCR + TTS pipeline, so the
-frame must contain only the story and the comments — nothing else the OCR
-could pick up as noise.
-
-- **Every username and every display name must contain at least one letter and
-  at least one digit or an underscore (`_`).** No exceptions, no numeric-only,
-  underscore-only, or clean plain-text names.
-- **Display names:** if there is a display name, it must include at least one
-  letter and at least one digit, with no underscore. A display name with only digits or with an
-  underscore is not allowed.
-- **Usernames:** usernames may include `@` only if they also contain at least
-  one letter and at least one digit or underscore in the name. Plain names without letters or
-  without digits/underscores are not allowed, and `@1234` or `@name` are not
-  allowed.
-- **No engagement counts anywhere** — no likes, shares, saves, views, reposts,
-  replies, follower counts, or any other number that isn't part of the story
-  itself.
-- **No dates or timestamps anywhere** — no post time, no "time ago" labels,
-  no date stamps. The frame should contain only the caption/story text and
-  the comment(s), nothing else.
-- **Strict output ratio: 3:4.** The final render must be portrait and must not
-  drift from the 3:4 aspect ratio.
-- **All profile pictures must be realistic and platform-appropriate.** They must
-  match the social context and feel like real account avatars, not generic AI
-  portraits, memes, or abstract icons.
-- **No famous meme imagery** may be used as the central artifact or visual
-  evidence.
-
-## 10. Before finalizing, check
-
-- Did I pick a single emotional target and let it drive every choice?
-- Does the story's emotional tone fit its situation, with a clear progression
-  that can guide the adaptive spoken delivery?
-- Does the story have a sharp, darkly funny, unsettling, or shocking edge?
-- Is the reaction line free of any explanation of its own joke?
-- Do the comments carry a dark, sarcastic, dry, or wry tone rather than
-  bland or upbeat reactions?
-- Is every fact/number/name specific rather than generic?
-- Does the artifact match what a real person would actually screenshot?
-- Is the picture inside the story directly relevant to the specific event,
-  object, or scene being described?
-- Is the photo completely free of readable text, labels, signs, stickers,
-  writing, or screen text?
-- Is the composition tight and filled with subject matter, with no large empty
-  space or dead margins?
-- Is there a moment someone would send to a specific friend?
-- Does this differ in shape/emotion from the last few generations?
-- Does every username/display name include at least one letter and a digit or underscore?
-- If a display name exists, does it include a letter + digit and no underscore?
-- If a username contains @, does it still include a letter and a digit or underscore?
-- Is the frame completely free of counts, dates, and timestamps?
-- Is the final output locked to a strict 3:4 portrait ratio?
-- Are all profile pictures realistic, platform-appropriate, and non-generic?
-- Is the main artifact original and not a famous meme or recognizable meme frame?
-- If the target is funny/absurd, does the IMAGE itself contain a genuine
-  visual-comedy mechanism rather than merely illustrating the text?
-- Is there exactly one primary visual joke?
-- Does the visual joke arise naturally from the specific situation?
-- Would the artifact still be interesting or amusing if the caption were
-  temporarily hidden?
-- Is the funniest detail discoverable rather than explicitly pointed out?
-- Does the image feel accidentally captured rather than professionally staged?
-- Are imperfections believable and native to the artifact?
-- Is there any unrelated "funny background" detail that should be removed?
-- Are facial expressions and animal behavior realistic rather than cartoonish?
-- Does the image create a natural "why did they do that?" reaction?
-- Does the artifact look like something that genuinely existed before someone
-  decided to share it?
-
-Invent the emotional target, mechanism, subject, artifact, accounts, and any
-reaction text fresh each time this framework is run.
+- engagement counts
+- follower counts
+- dates
+- timestamps
+- time-ago labels
+- unrelated numeric interface metadata
+
+Usernames and display names are permitted because downstream processing removes identifiers matching the required format.
+
+Natural informal language and slang may be used when appropriate, but do not deliberately introduce spelling errors simply to imitate social media.
+
+## 13. VISUAL FORMAT
+
+The final output must use a strict 3:4 portrait aspect ratio.
+
+The post should make effective use of the available frame without excessive empty margins.
+
+Use a visually authentic light or dark interface appropriate to the selected platform.
+
+Do not use decorative backgrounds, gradients, meme captions, arrows, circles, reaction stickers, giant headline graphics, watermarks, or artificial content-card styling unless such an element is genuinely native and necessary to the selected platform.
+
+## 14. GENERATION DIVERSITY
+
+Treat every generation as independent.
+
+Before choosing a subject, mentally discard the obvious first ideas and search for a less predictable direction.
+
+Vary the subject domain, emotional effect, narrative structure, platform, narrator perspective, artifact type, story length, pacing, and presentation.
+
+Do not establish recurring formulas.
+
+Do not simply substitute new nouns into the structure of a previous generation.
+
+Do not let recently generated subjects disproportionately influence the next subject.
+
+The collection should feel like posts discovered across the internet rather than posts written by one content generator.
+
+## FINAL CHECK
+
+Before producing the result, silently verify that:
+
+- the opening creates immediate curiosity;
+- there is enough substance to justify the post;
+- the story progresses instead of repeating itself;
+- details are specific where appropriate;
+- the strongest information appears at an effective point;
+- the writing sounds naturally human;
+- the selected social platform suits the content;
+- the interface looks convincingly authentic;
+- any visual artifact directly supports the story;
+- account identifiers satisfy the cleanup requirements;
+- unnecessary OCR noise is absent;
+- the output is strictly 3:4;
+- the concept is substantially different from recent generations;
+- the story was generated from abstract criteria rather than by copying or reskinning an example.
+
+If any condition fails, revise the generation before producing the final result.
