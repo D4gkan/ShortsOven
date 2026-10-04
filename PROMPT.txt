@@ -215,5 +215,6 @@ Before producing the result, silently verify that:
 - the output is strictly 3:4;
 - the concept is substantially different from recent generations;
 - the story was generated from abstract criteria rather than by copying or reskinning an example.
+- Do NOT use em dashes
 
 If any condition fails, revise the generation before producing the final result.
