@@ -19,6 +19,24 @@ from src.voice_quality import likely_whisper
 
 
 class PictureTests(unittest.TestCase):
+    def test_contrasting_card_border_is_not_a_picture(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder)/'card.png'
+            image = Image.new('RGB', (400, 600), '#dedacf')
+            draw = ImageDraw.Draw(image)
+            draw.rounded_rectangle((16, 15, 384, 585), radius=15, fill='white')
+            for y in (60, 85, 440, 480, 520):
+                draw.text((35, y), 'Story text remains narratable.', fill='black')
+            image.save(path)
+            self.assertEqual(detect_pictures(path), [])
+            photo = np.random.default_rng(4).integers(0, 256, (260, 340, 3), dtype=np.uint8)
+            image.paste(Image.fromarray(photo), (30, 150))
+            image.save(path)
+            pictures = detect_pictures(path)
+            self.assertEqual([(p.top, p.bottom) for p in pictures], [(150, 410)])
+            for y in (60, 85, 440, 480, 520):
+                self.assertTrue(outside_pictures(TextLine(0, 'Story', 35, y, 200, 15), pictures))
+
     def test_light_dark_and_no_picture(self):
         for background in ('white', '#18212b'):
             with self.subTest(background=background), tempfile.TemporaryDirectory() as folder:

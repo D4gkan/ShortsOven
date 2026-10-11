@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Recognize a post card's interior background separately from its outer border,
+  preventing a white card on a colored canvas from hiding all narration as a photo.
+- Show the actual error first when a batch fails, even when buffered OCR warnings
+  appear at the end of the log.
+
 - Detect broad embedded pictures independently of OCR and reveal them as separate
   chunks, with a half-second stationary hold plus short entrance/exit slides.
 - Pause narration for picture reveals and shift subsequent speech timings together.

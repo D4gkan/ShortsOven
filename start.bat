@@ -190,7 +190,7 @@ if "!HARDFAIL!"=="1" (
     echo   Source image and working files kept. Batch stopped.
     echo   %C_DIM%Log:%C_RESET% !LOGFILE!
     echo   %C_DIM%%LINE%%C_RESET%
-    powershell -NoProfile -Command "Get-Content -Tail 8 '!LOGFILE!'" 2>nul
+    powershell -NoProfile -Command "$lines = Get-Content -LiteralPath '!LOGFILE!'; $errors = @($lines | Select-String -Pattern '\[ERROR\]|Traceback|Error:|Exception:'); if ($errors.Count) { $first = $errors[0].LineNumber - 1; $lines | Select-Object -Skip $first -First 16 } else { $lines | Select-Object -Last 12 }" 2>nul
     pause
     exit /b 1
 )
