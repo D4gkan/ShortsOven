@@ -53,7 +53,7 @@ if not exist "%VENV_PYTHON%" (
     exit /b 1
 )
 
-"%VENV_PYTHON%" scripts\check_ollama.py >nul
+"%VENV_PYTHON%" scripts\check_ollama.py --start
 if errorlevel 1 (
     echo   %C_ERR%Ollama is not ready.%C_RESET%
     "%VENV_PYTHON%" scripts\check_ollama.py
