@@ -172,10 +172,11 @@ start "" /b "%VENV_PYTHON%" scripts\run_generation.py --log "!LOGFILE!" --pid-fi
 set /a ELAPSED=0
 set "PROCESS_ID="
 :BATCH_WAITLOOP
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\batch_status.ps1" -PidFile "!PIDFILE!" -DoneFlag "!DONEFLAG!" -ElapsedFile "!ELAPSEDFILE!" -LogFile "!LOGFILE!" 2>>"!LOGFILE!"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\batch_status.ps1" -PidFile "!PIDFILE!" -DoneFlag "!DONEFLAG!" -ElapsedFile "!ELAPSEDFILE!" -LogFile "!LOGFILE!" 2>>"!LOGFILE!.monitor.log"
 if errorlevel 1 (
     echo   %C_WARN%STOPPED%C_RESET%  Source image kept.
     echo   Check !LOGFILE! for the stop reason.
+    if exist "!LOGFILE!.monitor.log" type "!LOGFILE!.monitor.log"
     if exist "!PIDFILE!" del /q "!PIDFILE!" >nul 2>&1
     if exist "!ERRORLOG!" del /q "!ERRORLOG!" >nul 2>&1
     if exist "!DONEFLAG!" del /q "!DONEFLAG!" >nul 2>&1

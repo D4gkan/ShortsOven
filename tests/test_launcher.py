@@ -1,5 +1,6 @@
 """Exercise the real batch failure path without running the generation models."""
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import tempfile
@@ -14,6 +15,11 @@ class LauncherFailureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='shortsoven-failure-') as directory:
             folder = Path(directory)
             (folder / 'venv').mkdir()
+            (folder / 'scripts').mkdir()
+            for name in ['run_generation.py', 'batch_status.ps1']:
+                shutil.copyfile(ROOT / 'scripts' / name, folder / 'scripts' / name)
+            (folder / 'main.py').write_text(
+                "import sys\nprint('[ERROR] Deliberate failure', flush=True)\nsys.exit(7)\n")
             (folder / 'assets/images').mkdir(parents=True)
             (folder / 'assets/images/test.png').touch()
             lines = (ROOT / 'start.bat').read_text().splitlines()
@@ -24,10 +30,6 @@ class LauncherFailureTests(unittest.TestCase):
                     lines[index] = 'ver >nul'
                 elif line.startswith('choice /c MF'):
                     lines[index] = 'choice /c MF /n /d M /t 0'
-                elif line.startswith('start "" /b'):
-                    lines[index] = 'echo [ERROR] Deliberate failure > "!LOGFILE!"\necho 7 > "!DONEFLAG!"'
-                elif line.startswith('powershell -NoProfile -ExecutionPolicy Bypass -File'):
-                    lines[index] = 'ver >nul'
                 elif line.strip() == 'pause':
                     lines[index] = 'echo PAUSE_REACHED'
                 elif line.strip() == 'cmd.exe /d /k':
@@ -43,6 +45,10 @@ class LauncherFailureTests(unittest.TestCase):
             self.assertEqual(result.returncode, 1, output + repr(result.stderr))
             self.assertIn('Deliberate failure', output)
             self.assertIn('PAUSE_REACHED', output)
+            self.assertNotIn('PermissionError', output)
+            generation_logs = [p for p in (folder / 'logs').glob('run_*.log')
+                               if not p.name.endswith('.monitor.log')]
+            self.assertIn('Process exited: 7', generation_logs[0].read_text())
             self.assertIn('ShortsOven exited with code 1', output)
             self.assertIn('RECOVERY_PROMPT', output)
             self.assertTrue((folder / 'assets/images/test.png').exists())

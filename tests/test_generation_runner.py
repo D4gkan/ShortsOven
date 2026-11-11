@@ -1,4 +1,5 @@
 """Integration checks for preserving evidence from failed generation workers."""
+import os
 import subprocess
 import sys
 import tempfile
@@ -19,6 +20,34 @@ class GenerationRunnerTests(unittest.TestCase):
                  '--', *command], capture_output=True, text=True, timeout=20)
             self.assertEqual(result.returncode, 0, result.stderr)
             return (folder / 'run.log').read_text(encoding='utf-8'), (folder / 'done').read_text()
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows file sharing')
+    def test_locked_log_signals_failure_without_starting_worker(self):
+        import ctypes
+        from ctypes import wintypes
+        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+        kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
+                                      wintypes.LPVOID, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+        kernel.CreateFileW.restype = wintypes.HANDLE
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            log = folder / 'locked.log'
+            handle = kernel.CreateFileW(str(log), 0x40000000, 0, None, 4, 0x80, None)
+            self.assertNotEqual(handle, ctypes.c_void_p(-1).value)
+            try:
+                result = subprocess.run(
+                    [sys.executable, str(RUNNER), '--log', str(log),
+                     '--pid-file', str(folder / 'pid'), '--done-flag', str(folder / 'done'),
+                     '--', sys.executable, '-c', "print('must not start')"],
+                    capture_output=True, text=True, timeout=20)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('PermissionError', result.stderr)
+                self.assertFalse((folder / 'pid').exists())
+                self.assertTrue((folder / 'done').exists(), 'Monitor must not wait forever after log failure')
+                self.assertEqual((folder / 'done').read_text(), '1')
+            finally:
+                kernel.CloseHandle(handle)
 
     def test_failure_keeps_both_output_streams_and_exit_code(self):
         log, status = self.run_worker([
