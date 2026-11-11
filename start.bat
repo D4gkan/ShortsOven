@@ -4,6 +4,22 @@ cd /d "%~dp0"
 chcp 65001 >nul
 set "PYTHONUTF8=1"
 
+REM Keep the console available after an unexpected batch exit or syntax error.
+REM The child session runs the existing launcher; the outer session owns recovery.
+if /i not "%~1"=="--preview" if not defined SHORTSOVEN_SESSION (
+    set "SHORTSOVEN_SESSION=1"
+    cmd.exe /d /c ""%~f0" %*"
+    set "LAUNCH_EXIT=!errorlevel!"
+    if not "!LAUNCH_EXIT!"=="0" (
+        echo.
+        echo ShortsOven exited with code !LAUNCH_EXIT!.
+        echo The window will stay open. Recent generation logs are in logs\.
+        echo Type exit when you want to close this window.
+        cmd.exe /d /k
+    )
+    exit /b !LAUNCH_EXIT!
+)
+
 title SHORTS OVEN
 
 REM ============================================================
