@@ -151,18 +151,20 @@ if exist "!PIDFILE!" del /q "!PIDFILE!" >nul 2>&1
 if exist "!ERRORLOG!" del /q "!ERRORLOG!" >nul 2>&1
 if exist "!ELAPSEDFILE!" del /q "!ELAPSEDFILE!" >nul 2>&1
 
-start "" /b powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$p = Start-Process -FilePath '%VENV_PYTHON%' -ArgumentList @('main.py','--image','!CURRENT_IMAGE!') -WindowStyle Hidden -RedirectStandardOutput '%LOGFILE%' -RedirectStandardError '%ERRORLOG%' -PassThru; Set-Content -LiteralPath '%PIDFILE%' -Value $p.Id -Encoding ascii; $p.WaitForExit(); if (Test-Path -LiteralPath '%ERRORLOG%') { Get-Content -LiteralPath '%ERRORLOG%' | Add-Content -LiteralPath '%LOGFILE%' }; Set-Content -LiteralPath '%DONEFLAG%' -Value $p.ExitCode -Encoding ascii"
+start "" /b "%VENV_PYTHON%" scripts\run_generation.py --log "!LOGFILE!" --pid-file "!PIDFILE!" --done-flag "!DONEFLAG!" -- "%VENV_PYTHON%" -u -X faulthandler main.py --image "!CURRENT_IMAGE!"
 
 set /a ELAPSED=0
 set "PROCESS_ID="
 :BATCH_WAITLOOP
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\batch_status.ps1" -PidFile "!PIDFILE!" -DoneFlag "!DONEFLAG!" -ElapsedFile "!ELAPSEDFILE!" -LogFile "!LOGFILE!" 2>nul
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\batch_status.ps1" -PidFile "!PIDFILE!" -DoneFlag "!DONEFLAG!" -ElapsedFile "!ELAPSEDFILE!" -LogFile "!LOGFILE!" 2>>"!LOGFILE!"
 if errorlevel 1 (
     echo   %C_WARN%STOPPED%C_RESET%  Source image kept.
+    echo   Check !LOGFILE! for the stop reason.
     if exist "!PIDFILE!" del /q "!PIDFILE!" >nul 2>&1
     if exist "!ERRORLOG!" del /q "!ERRORLOG!" >nul 2>&1
     if exist "!DONEFLAG!" del /q "!DONEFLAG!" >nul 2>&1
     if exist "!ELAPSEDFILE!" del /q "!ELAPSEDFILE!" >nul 2>&1
+    pause
     exit /b 130
 )
 

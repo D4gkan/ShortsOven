@@ -71,6 +71,7 @@ try {
         }
 
         if (([ShortsOvenKeyState]::GetAsyncKeyState(0x1B) -band 0x8000) -ne 0) {
+            if ($LogFile) { Add-Content -LiteralPath $LogFile -Value "[DIAGNOSTIC] Stop requested: Escape key detected by status monitor." }
             if (Test-Path -LiteralPath $PidFile) {
                 $processId = (Get-Content -LiteralPath $PidFile -Raw).Trim()
                 if ($processId -match '^\d+$') {
@@ -82,7 +83,17 @@ try {
         Start-Sleep -Milliseconds 100
     }
     $completedSeconds = [math]::Floor($stopwatch.Elapsed.TotalSeconds)
-    Set-Content -LiteralPath $ElapsedFile -Value $completedSeconds -Encoding ascii
+    Set-Content -LiteralPath $ElapsedFile -Value $completedSeconds -Encoding ascii -ErrorAction Stop
+} catch {
+    if ($LogFile) { Add-Content -LiteralPath $LogFile -Value "[ERROR] Status monitor failed: $_" }
+    Write-Error $_
+    if (Test-Path -LiteralPath $PidFile) {
+        $processId = (Get-Content -LiteralPath $PidFile -Raw).Trim()
+        if ($processId -match '^\d+$') {
+            & taskkill.exe /PID $processId /T /F > $null 2>&1
+        }
+    }
+    exit 2
 } finally {
     if ($interactive) {
         [Console]::Write("`r${esc}[2K")

@@ -19,3 +19,6 @@ symspellpy>=6.7.7
 pandas==2.2.3
 numba==0.58.1
 llvmlite==0.41.1
+
+# Generation crash and memory diagnostics.
+psutil>=5.9,<8

@@ -118,7 +118,8 @@ class QwenTTSEngine:
         except ImportError:
             pass  # qwen_tts will pick a sensible default dtype itself
 
-        load_kwargs = {"device_map": device}
+        # SDPA avoids materializing the full attention matrix during long narration.
+        load_kwargs = {"device_map": device, "attn_implementation": "sdpa"}
         if dtype is not None:
             load_kwargs["dtype"] = dtype
 
@@ -129,7 +130,7 @@ class QwenTTSEngine:
                 log.warning(f"GPU load of Qwen3-TTS failed ({e}); "
                             f"falling back to CPU inference.")
                 try:
-                    model = Qwen3TTSModel.from_pretrained(self.model_dir, device_map="cpu")
+                    model = Qwen3TTSModel.from_pretrained(self.model_dir, device_map="cpu", attn_implementation="sdpa")
                 except Exception as e2:
                     raise TTSError(
                         f"Failed to load Qwen3-TTS model from '{self.model_dir}' "
