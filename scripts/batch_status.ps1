@@ -8,21 +8,13 @@ param(
     [string]$LogFile
 )
 
-Add-Type @'
-using System;
-using System.Runtime.InteropServices;
-public static class ShortsOvenKeyState
-{
-    [DllImport("user32.dll")]
-    public static extern short GetAsyncKeyState(int virtualKey);
-}
-'@
-
 $stopwatch = [Diagnostics.Stopwatch]::StartNew()
 $lastShownSecond = -1
 $stage = 'Starting'
 $lastPrintedStage = ''
 $interactive = -not [Console]::IsOutputRedirected
+$canReadKeys = -not [Console]::IsInputRedirected
+$displayAvailable = $true
 $esc = [char]27
 $spinner = @('|', '/', '-', '\')
 $oldCursorVisible = $true
@@ -51,27 +43,51 @@ try {
                 }
             }
             $status = "    $($spinner[$elapsedSeconds % 4])  $stage  /  $clock  /  Esc to stop"
-            if ($interactive) {
-                # Never pad beyond the window width: doing so wraps and creates
-                # a new blank row on every tick in narrow terminals.
-                $width = [Console]::WindowWidth
-                if ($width -le 1) { $width = 80 }
-                $limit = [math]::Max(1, $width - 1)
-                if ($status.Length -gt $limit) {
-                    $status = $status.Substring(0, [math]::Max(0, $limit - 3)) + '...'
-                    if ($status.Length -gt $limit) { $status = $status.Substring(0, $limit) }
+            if ($displayAvailable) {
+                try {
+                    if ($interactive) {
+                        # Never pad beyond the window width: doing so wraps and creates
+                        # a new blank row on every tick in narrow terminals.
+                        $width = [Console]::WindowWidth
+                        if ($width -le 1) { $width = 80 }
+                        $limit = [math]::Max(1, $width - 1)
+                        if ($status.Length -gt $limit) {
+                            $status = $status.Substring(0, [math]::Max(0, $limit - 3)) + '...'
+                            if ($status.Length -gt $limit) { $status = $status.Substring(0, $limit) }
+                        }
+                        [Console]::Write("`r${esc}[2K${esc}[96m$status${esc}[0m")
+                        $Host.UI.RawUI.WindowTitle = "ShortsOven - $stage - $clock"
+                    } elseif ($stage -ne $lastPrintedStage) {
+                        Write-Output "    $stage / $clock"
+                        $lastPrintedStage = $stage
+                    }
+                } catch {
+                    $displayAvailable = $false
+                    $interactive = $false
+                    $canReadKeys = $false
+                    if ($LogFile) {
+                        Add-Content -LiteralPath $LogFile -Value "[WARNING] Progress display disconnected; generation continues: $_" -ErrorAction SilentlyContinue
+                    }
                 }
-                [Console]::Write("`r${esc}[2K${esc}[96m$status${esc}[0m")
-                $Host.UI.RawUI.WindowTitle = "ShortsOven - $stage - $clock"
-            } elseif ($stage -ne $lastPrintedStage) {
-                Write-Output "    $stage / $clock"
-                $lastPrintedStage = $stage
             }
             $lastShownSecond = $elapsedSeconds
         }
 
-        if (([ShortsOvenKeyState]::GetAsyncKeyState(0x1B) -band 0x8000) -ne 0) {
-            if ($LogFile) { Add-Content -LiteralPath $LogFile -Value "[DIAGNOSTIC] Stop requested: Escape key detected by status monitor." }
+        # Read this console's input queue, never the desktop-wide keyboard state.
+        $stopRequested = $false
+        if ($canReadKeys) {
+            try {
+                while ([Console]::KeyAvailable) {
+                    if ([Console]::ReadKey($true).Key -eq [ConsoleKey]::Escape) {
+                        $stopRequested = $true
+                    }
+                }
+            } catch {
+                $canReadKeys = $false
+            }
+        }
+        if ($stopRequested) {
+            if ($LogFile) { Add-Content -LiteralPath $LogFile -Value "[DIAGNOSTIC] Stop requested: Escape pressed in ShortsOven console." }
             if (Test-Path -LiteralPath $PidFile) {
                 $processId = (Get-Content -LiteralPath $PidFile -Raw).Trim()
                 if ($processId -match '^\d+$') {
@@ -85,20 +101,26 @@ try {
     $completedSeconds = [math]::Floor($stopwatch.Elapsed.TotalSeconds)
     Set-Content -LiteralPath $ElapsedFile -Value $completedSeconds -Encoding ascii -ErrorAction Stop
 } catch {
-    if ($LogFile) { Add-Content -LiteralPath $LogFile -Value "[ERROR] Status monitor failed: $_" }
-    Write-Error $_
-    if (Test-Path -LiteralPath $PidFile) {
-        $processId = (Get-Content -LiteralPath $PidFile -Raw).Trim()
-        if ($processId -match '^\d+$') {
-            & taskkill.exe /PID $processId /T /F > $null 2>&1
-        }
+    # Progress reporting must never terminate an otherwise healthy generation.
+    if ($LogFile) {
+        Add-Content -LiteralPath $LogFile -Value "[WARNING] Status monitor switched to silent waiting; generation continues: $_" -ErrorAction SilentlyContinue
     }
-    exit 2
+    $interactive = $false
+    while (-not (Test-Path -LiteralPath $DoneFlag)) {
+        Start-Sleep -Milliseconds 100
+    }
+    try {
+        Set-Content -LiteralPath $ElapsedFile -Value ([math]::Floor($stopwatch.Elapsed.TotalSeconds)) -Encoding ascii -ErrorAction Stop
+    } catch {
+        exit 2
+    }
 } finally {
     if ($interactive) {
-        [Console]::Write("`r${esc}[2K")
-        try { [Console]::CursorVisible = $oldCursorVisible } catch {}
-        $Host.UI.RawUI.WindowTitle = 'ShortsOven'
+        try {
+            [Console]::Write("`r${esc}[2K")
+            [Console]::CursorVisible = $oldCursorVisible
+            $Host.UI.RawUI.WindowTitle = 'ShortsOven'
+        } catch {}
     }
 }
 exit 0
